@@ -1,0 +1,6 @@
+C:\Users\Mariajo Leal\Documents\GitHub\Arqui\Proyecto\Proyecto\bin\Debug\Proyecto.exe.config
+C:\Users\Mariajo Leal\Documents\GitHub\Arqui\Proyecto\Proyecto\obj\Debug\Proyecto.csprojResolveAssemblyReference.cache
+C:\Users\Mariajo Leal\Documents\GitHub\Arqui\Proyecto\Proyecto\bin\Debug\Proyecto.exe
+C:\Users\Mariajo Leal\Documents\GitHub\Arqui\Proyecto\Proyecto\bin\Debug\Proyecto.pdb
+C:\Users\Mariajo Leal\Documents\GitHub\Arqui\Proyecto\Proyecto\obj\Debug\Proyecto.exe
+C:\Users\Mariajo Leal\Documents\GitHub\Arqui\Proyecto\Proyecto\obj\Debug\Proyecto.pdb
