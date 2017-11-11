@@ -17,9 +17,23 @@ namespace Proyecto
         public int[,] directorio;
         public int hilillosTerminados;
 
-        public Procesador()
+        public Procesador(int np)
         {
+            //numProc = np;
+            if (np == 0)
+            {
+                n0 = new Nucleo();
+                n1 = new Nucleo();
+            }
+            else
+            {
+                n0 = new Nucleo();
+            }
+                
 
         }
+     
+            
     }
+    
 }

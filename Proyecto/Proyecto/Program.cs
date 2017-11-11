@@ -14,6 +14,18 @@ namespace Proyecto
         {
             Console.WriteLine("Ingrese valor del quantum: ");   // Valor del quantum
             quantum = int.Parse(Console.ReadLine());
+
+            Controlador cont = new Controlador(quantum);
+            /*Thread hiloPrincipal = new Thread(new ThreadStart(cont.iniciarPrograma));    // Se crea un nuevo hilo controlador
+            hiloPrincipal.Start();  // Se inicia el hilo controlador
+
+            while (hiloPrincipal.IsAlive)   // El programa principal espera a que el hilo principal haya terminado
+            {
+
+            }*/
+
+            Console.WriteLine("\nPresione cualquier tecla para salir del programa");
+            Console.ReadKey();
         }
     }
 }
