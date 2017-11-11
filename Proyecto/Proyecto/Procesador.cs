@@ -22,12 +22,22 @@ namespace Proyecto
             //numProc = np;
             if (np == 0)
             {
+                numProc = 0;
                 n0 = new Nucleo();
                 n1 = new Nucleo();
+                //inicializacion de la memoria
+                memPric = new int[64];
+                memInst = new int[384];
+                directorio = new int[16, 5];
             }
             else
             {
+                numProc = 1;
                 n0 = new Nucleo();
+                //inicializacion de la memoria
+                memPric = new int[32];
+                memInst = new int[256];
+                directorio = new int[8, 5];
             }
                 
 
