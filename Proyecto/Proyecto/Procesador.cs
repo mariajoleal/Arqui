@@ -16,8 +16,10 @@ namespace Proyecto
         public int[,] colaContext;
         public int[,] directorio;
         public int hilillosTerminados;
+        public int[] inicioHilillo; //inicioHilillo[i] indica donde empieza el hilillo que esta en la posicion i 
+        public int indiceInicioHilillo;//indice que se mueve sobre el array inicioHilillo
 
-        public Procesador(int np)
+        public Procesador(int np = 0)
         {
             //numProc = np;
             if (np == 0)
@@ -29,6 +31,9 @@ namespace Proyecto
                 memPric = new int[64];
                 memInst = new int[384];
                 directorio = new int[16, 5];
+               
+                //pone en el directorio todos los bloques u. U = 0, M = 1, C =2
+              
             }
             else
             {
@@ -39,9 +44,15 @@ namespace Proyecto
                 memInst = new int[256];
                 directorio = new int[8, 5];
             }
+            inicioHilillo = new int[3];
+            indiceInicioHilillo = 0;
         }
-     
-            
+
+        public void setDireccionHilillo(int direccion)
+        {
+            inicioHilillo[indiceInicioHilillo] = direccion;
+            ++indiceInicioHilillo;
+        }
     }
     
 }

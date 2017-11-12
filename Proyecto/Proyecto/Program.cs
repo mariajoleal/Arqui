@@ -16,6 +16,7 @@ namespace Proyecto
             quantum = int.Parse(Console.ReadLine());
 
             Controlador cont = new Controlador(quantum);
+            cont.cargarTxt();
             /*Thread hiloPrincipal = new Thread(new ThreadStart(cont.iniciarPrograma));    // Se crea un nuevo hilo controlador
             hiloPrincipal.Start();  // Se inicia el hilo controlador
 

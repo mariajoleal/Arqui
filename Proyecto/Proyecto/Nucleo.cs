@@ -12,7 +12,7 @@ namespace Proyecto
         public Barrier sync;
         public int[,] cacheDatos;
         public int[,] cacheInst;
-        int pc;
+        public int pc;
 
         public Nucleo()
         {
@@ -20,21 +20,14 @@ namespace Proyecto
             cacheDatos = new int[4, 6];
             cacheInst = new int[4, 17];
 
-            //pone en -1 el todos los bloques de la caché
+            //pone en -1 el numero de bloque de todos los bloques de la caché
+            //se pone en -1 el estado del bloque
             for (int i = 0; i < 4; ++i)
             {
                 cacheDatos[i, 4] = -1;
                 cacheDatos[i, 5] = -1;
             }
-            Console.WriteLine("cache de datos procesador\n");
-            for(int i = 0; i < 4; ++i)
-            {
-                for(int j = 0; j < 6; ++j)
-                {
-                    Console.Write(cacheDatos[i, j] + " ");
-                }
-                Console.Write("\n");
-            }
+            
             //pone en -1 los bloques de caché de instrucciones
             for (int i = 0; i < 4; ++i)
             {
