@@ -39,8 +39,6 @@ namespace Proyecto
                 memInst = new int[256];
                 directorio = new int[8, 5];
             }
-                
-
         }
      
             
