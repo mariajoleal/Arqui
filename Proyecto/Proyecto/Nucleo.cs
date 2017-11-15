@@ -6,7 +6,7 @@ using System.Threading;
 
 namespace Proyecto
 {
-    class Nucleo
+    class Nucleo 
     {
         public int[] registros;
         public Barrier sync;
@@ -55,6 +55,15 @@ namespace Proyecto
                     Console.Write(this.cacheInst[i, j] + "  ");
                 }
                 Console.Write("\n");
+            }
+        }
+
+        public void imprimirInstrucciones0()
+        {
+            Console.WriteLine("memoria instrucciones nucleo:");
+            for (int i = 0; i < 50; ++i)
+            {
+                    //Console.Write(this.memInst[i] + "  ");
             }
         }
     }//clase nucleo

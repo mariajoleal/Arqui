@@ -10,44 +10,93 @@ namespace Proyecto
     class Procesador
     {
         public int numProc;
-        Nucleo n0;
-        Nucleo n1;
-        public int[] memPric;
+        public int[] memPrinc;
         public int[] memInst;
         public Queue<int[]> colaContexto;
         public int[,] directorio;
         public int hilillosTerminados;
+
+        public int[] registrosN0;
+        public int[] registrosN1;
+        public int[,] cacheDatosN0;
+        public int[,] cacheDatosN1;
+        public int[,] cacheInstN0;
+        public int[,] cacheInstN1;
+        public int pc;
+        int quantum;
         //public int[] inicioHilillo; //inicioHilillo[i] indica donde empieza el hilillo que esta en la posicion i 
         //public int indiceInicioHilillo;//indice que se mueve sobre el array inicioHilillo
         //public int[] contexto;
 
-        public Procesador(int np = 0)
+        public Procesador(int np)
         {
             //numProc = np;
             if (np == 0)
             {
                 numProc = 0;
-                n0 = new Nucleo();
-                n1 = new Nucleo();
+                
                 //inicializacion de la memoria
-                memPric = new int[64];
+                memPrinc = new int[64];
                 memInst = new int[384];
                 directorio = new int[16, 5];
                // contexto = new int[33];
                 colaContexto = new Queue<int[]>();
-                //inicioHilillo = new int[4];
-                //pone en el directorio todos los bloques u. U = 0, M = 1, C =2
+                registrosN0 = new int[32];
+                registrosN1 = new int[32];
+                cacheDatosN0 = new int[4, 6];
+                cacheDatosN1 = new int[4, 6];
+                cacheInstN0 = new int[4, 17];
+                cacheInstN1 = new int[4, 17];
+                pc = 0;
+
+
+                for (int i = 0; i < 4; ++i)
+                {
+                    cacheDatosN0[i, 4] = -1;
+                    cacheDatosN0[i, 5] = -1;
+
+                    cacheDatosN1[i, 4] = -1;
+                    cacheDatosN1[i, 5] = -1;
+                }
+
+                //pone en -1 los bloques de caché de instrucciones
+                for (int i = 0; i < 4; ++i)
+                {
+                    cacheInstN0[i, 16] = -1;
+                    cacheInstN1[i, 16] = -1;
+                }
 
             }
             else
             {
                 numProc = 1;
-                n0 = new Nucleo();
+            
                 //inicializacion de la memoria
-                memPric = new int[32];
+                memPrinc = new int[32];
                 memInst = new int[256];
                 directorio = new int[8, 5];
                 colaContexto = new Queue<int[]>();
+
+                registrosN0 = new int[32];
+               
+                cacheDatosN0 = new int[4, 6];
+                
+                cacheInstN0 = new int[4, 17];
+                
+                pc = 0;
+
+                for (int i = 0; i < 4; ++i)
+                {
+                    cacheDatosN0[i, 4] = -1;
+                    cacheDatosN0[i, 5] = -1;
+                }
+
+                //pone en -1 los bloques de caché de instrucciones
+                for (int i = 0; i < 4; ++i)
+                {
+                    cacheInstN0[i, 16] = -1;
+                }
+
                 //inicioHilillo = new int[2];
             }
             //inicioHilillo = new int[4];
@@ -75,40 +124,172 @@ namespace Proyecto
                 int[] temp = colaContexto.Dequeue();
                 Console.WriteLine(temp[32]);
             }*/
-        } 
+        }
 
-        public void calcularBloque(int nucleo)//el parametro nucleo es para saber a cual cache se tiene que subir el bloque
+        public void traerInstruccion(int pc, int[,] cache)//sube de memoria el bloque donde esta la instruccion
         {
-            if (Monitor.TryEnter(this.colaContexto))
+                   
+            int numBloque = pc / 16;//calcula el numero de bloque donde esta la instruccion
+            int[] bloque = new int[17];//array donde se va a guardar el bloque de instrucciones que se va a guardar en cache
+            bloque[16] = numBloque;//pone en la ultima posicion del array el numero de bloque
+            for (int i = 0; i < 16; ++i)
             {
-                try
+                bloque[i] = memInst[pc];
+                ++pc;
+            }
+
+            int posCache = numBloque % 4;
+            for(int i = 0; i < 16; ++i)
+            {
+                cache[posCache, i] = bloque[i];
+            }              
+        }
+
+        public int[] sacarContexto()
+        {
+            Monitor.Enter(this.colaContexto);
+
+            int[] contexto = new int[33];//array donde se guarda el contexto que se saca de la cola de contextos
+            contexto = colaContexto.Dequeue();
+            Monitor.Exit(this.colaContexto);
+            return contexto;
+        }
+
+        public int[] recuperarInstruccion(int pc, int[,] cache)//el parametro nucleo es para saber a cual cache se tiene que subir el bloque
+        {
+
+            int[] IR = new int[4];
+            
+            int numBloque = pc / 16;//calcula el numero de bloque donde esta la instruccion
+            int posCache = numBloque % 4;
+                    
+            if(cache[posCache, 16] == numBloque)//pregunta si el bloque esta en cache
+            {
+                for(int i = 0; i < 4; ++i)
                 {
-                    int[] contexto = new int[33];//array donde se guarda el contexto que se saca de la cola de contextos
-                    contexto = colaContexto.Dequeue();
-                    int pcContexto = contexto[32];//direccion de memoria de la instruccion
-                    int numBloque = pcContexto / 16;//calcula el numero de bloque donde esta la instruccion
-                    int[] bloque = new int[17];//array donde se va a guardar el bloque de instrucciones que se va a guardar en cache
-                    bloque[16] = numBloque;//pone en la ultima posicion del array el numero de bloque
-                    for (int i = 0; i < 16; ++i)
-                    {
-                        bloque[i] = memInst[pcContexto];
-                        ++pcContexto;
-                    }
-                    if (nucleo == 0)
-                    {
-                        this.n0.subirInstruccionCache(bloque);//manda a subir el bloque a cache
-                    }
-                    else
-                    {
-                        this.n1.subirInstruccionCache(bloque);//manda a subir el bloque a cache
-                    }
-                }
-                finally
-                {
-                    Monitor.Exit(this.colaContexto);
+                    IR[i] = cache[posCache, i];
                 }
             }
-                
+            else
+            {
+                traerInstruccion(pc, cache);//trae la instruccion de memoria
+                for (int i = 0; i < 4; ++i)
+                {
+                    IR[i] = cache[posCache, i];
+                }
+            }
+                     
+            return IR;
+        }
+
+        public void imprimirInstrucciones()
+        {
+            Console.WriteLine("memoria instrucciones procesador:");
+            for (int i = 0; i < 50; ++i)
+            {
+                Console.Write(this.memInst[i] + "  ");
+            }
+        }
+
+        public void imprimirCacheInst(int nucleo)
+        {
+            if(nucleo == 0)
+            {
+                Console.WriteLine("Cache instrucciones nucleo: " + nucleo);
+                for (int i = 0; i < 4; ++i)
+                {
+                    for (int j = 0; j < 17; ++j)
+                    {
+                        Console.Write(this.cacheInstN0[i, j] + "  ");
+                    }
+                    Console.Write("\n");
+                }
+            }
+            else
+            {
+                Console.WriteLine("Cache instrucciones nucleo: " + nucleo);
+                for (int i = 0; i < 4; ++i)
+                {
+                    for (int j = 0; j < 17; ++j)
+                    {
+                        Console.Write(this.cacheInstN1[i, j] + "  ");
+                    }
+                    Console.Write("\n");
+                }
+            }
+            
+        }
+
+        public void ejecutarInstruccion(int[,] cache)
+        {
+            while(colaContexto.Count != 0)
+            {
+                int[] registros = sacarContexto();
+                int pc = registros[32];
+                int quantumLocal = quantum;
+                while (quantumLocal != 0)
+                {
+                    int[] instruccion = recuperarInstruccion(pc, cache);
+                    pc += 4;
+                    int codOp = instruccion[0];
+                    
+
+                    switch (codOp)
+                    {
+                        case 2:     // JR
+                            pc = registros[instruccion[1]];
+                            break;
+                        case 3:     // JAL
+                            registros[31] = pc;
+                            pc += instruccion[3];
+                            break;
+                        case 4:     // BEQZ
+                            if (registros[instruccion[1]] == 0)
+                            {
+                                pc += instruccion[3] * 4;
+                            }
+                            break;
+                        case 5:     // BENZ
+                            if (registros[instruccion[1]] != 0)
+                            {
+                                pc += instruccion[3] * 4;
+                            }
+                            break;
+                        case 8:     // DADDI
+                            registros[instruccion[2]] = registros[instruccion[1]] + instruccion[3];
+                            break;
+                        case 12:    // DMUL
+                            registros[instruccion[3]] = registros[instruccion[1]] * registros[instruccion[2]];
+                            break;
+                        case 14:    // DDIV
+                            registros[instruccion[3]] = registros[instruccion[1]] / registros[instruccion[2]];
+                            break;
+                        case 32:    // DADD
+                            registros[instruccion[3]] = registros[instruccion[1]] + registros[instruccion[2]];
+                            break;
+                        case 34:    // DSUB
+                            registros[instruccion[3]] = registros[instruccion[1]] - registros[instruccion[2]];
+                            break;
+                        case 35:    // LW
+                                    // Ejecutar LOAD    
+                            break;
+                        case 43:    // SW
+                                    // Ejecutar STORE
+                            break;
+                        case 63:    // Termino el hilillo
+                            ++hilillosTerminados;
+                            //Console.WriteLine("termine" + " " + numeroProcesador);
+                            //Console.ReadKey();
+                            pc = -1;    // "Stamp" para indicar que el hilillo ya se ejecutó en su totalidad
+                                        //guardarContexto();
+                                        //cargarContexto();
+                            break;
+                    }
+                }
+            }
+            
+
+            
             
         }
     }//clase procesador
