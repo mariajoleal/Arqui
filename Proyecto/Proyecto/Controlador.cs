@@ -27,8 +27,8 @@ namespace Proyecto
 
         public int[] cargarTxt(int numProc)
         {
-            string path0 = "C:\\Users\\jpvar\\Desktop\\Arqui\\hilillos0";
-            string path1 = "C:\\Users\\jpvar\\Desktop\\Arqui\\hilillos1";
+            string path0 = "C:\\Users\\b37275\\Desktop\\Arqui\\Proyecto\\hilillos\\hilillos0";
+            string path1 = "C:\\Users\\b37275\\Desktop\\Arqui\\Proyecto\\hilillos\\hilillos1";
 
             int indiceMem = 0;  // Para movernos por el array de la memoria principal
             int indiceMem1 = 0;
@@ -63,10 +63,11 @@ namespace Proyecto
                         }
                         procesador0.memInst[indiceMem] = Int32.Parse(numero);
                         numero = "";
+                 
                     }
                 }
 
-                Console.WriteLine("Instrucciones p0");
+                /*Console.WriteLine("Instrucciones p0");
                 for (int i = 0; i < 300; ++i)
                 {
                     Console.Write(procesador0.memInst[i] + "  ");
@@ -76,7 +77,7 @@ namespace Proyecto
                 for (int i = 0; i < inicioHilillo.Length; ++i)
                 {
                     Console.Write(inicioHilillo[i] + "  ");
-                }
+                }*/
             }
             else
             {
@@ -108,7 +109,7 @@ namespace Proyecto
                     }
                 }
 
-                Console.WriteLine("Instrucciones p1");
+                /*Console.WriteLine("Instrucciones p1");
                 for (int i = 0; i < 150; ++i)
                 {
                     Console.Write(procesador1.memInst[i] + "  ");
@@ -119,13 +120,39 @@ namespace Proyecto
                 for (int i = 0; i < inicioHilillo.Length; ++i)
                 {
                     Console.Write(inicioHilillo[i] + "  ");
-                }
+                }*/
             }
-        
-           
-            
-
             return inicioHilillo;
         } 
-   }
-}
+
+        public void iniciarPrograma()
+        {
+            int[] temp1 = cargarTxt(0);
+            int[] temp2 = cargarTxt(1);
+            procesador0.crearColaContextos(temp1);
+            procesador1.crearColaContextos(temp2);
+            crearHilos();
+           
+        }
+
+        public void crearHilos()
+        {
+            Thread nucleo0 = new Thread(delegate ()
+            {
+                procesador0.ejecutarInstruccion(procesador0.cacheInstN0);
+            });
+
+            Thread nucleo1 = new Thread(delegate ()
+            {
+                procesador0.ejecutarInstruccion(procesador0.cacheInstN1);
+            });
+
+            Thread nucleo2 = new Thread(delegate ()
+            {
+                procesador1.ejecutarInstruccion(procesador1.cacheInstN0);
+            });
+        }
+
+     
+   }//clase controlador
+}//namespace proyecto
