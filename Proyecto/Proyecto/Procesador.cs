@@ -68,14 +68,49 @@ namespace Proyecto
                 contexto[32] = inicioHilillo[i];
                 colaContexto.Enqueue(contexto);
             }
-
-            Console.WriteLine("colaContexto.Count = " + colaContexto.Count);
-            for (int i = 0; i < colaContexto.Count; ++i)
+            int count = colaContexto.Count;
+           /* Console.WriteLine("colaContexto.Count = " + colaContexto.Count);
+            for (int i = 0; i < count; ++i)
             {
                 int[] temp = colaContexto.Dequeue();
                 Console.WriteLine(temp[32]);
-            }
+            }*/
         } 
-    }
+
+        public void calcularBloque(int nucleo)//el parametro nucleo es para saber a cual cache se tiene que subir el bloque
+        {
+            if (Monitor.TryEnter(this.colaContexto))
+            {
+                try
+                {
+                    int[] contexto = new int[33];//array donde se guarda el contexto que se saca de la cola de contextos
+                    contexto = colaContexto.Dequeue();
+                    int pcContexto = contexto[32];//direccion de memoria de la instruccion
+                    int numBloque = pcContexto / 16;//calcula el numero de bloque donde esta la instruccion
+                    int[] bloque = new int[17];//array donde se va a guardar el bloque de instrucciones que se va a guardar en cache
+                    bloque[16] = numBloque;//pone en la ultima posicion del array el numero de bloque
+                    for (int i = 0; i < 16; ++i)
+                    {
+                        bloque[i] = memInst[pcContexto];
+                        ++pcContexto;
+                    }
+                    if (nucleo == 0)
+                    {
+                        this.n0.subirInstruccionCache(bloque);//manda a subir el bloque a cache
+                    }
+                    else
+                    {
+                        this.n1.subirInstruccionCache(bloque);//manda a subir el bloque a cache
+                    }
+                }
+                finally
+                {
+                    Monitor.Exit(this.colaContexto);
+                }
+            }
+                
+            
+        }
+    }//clase procesador
     
-}
+}//namespace Proyecto

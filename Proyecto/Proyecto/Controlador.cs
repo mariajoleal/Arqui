@@ -27,8 +27,8 @@ namespace Proyecto
 
         public int[] cargarTxt(int numProc)
         {
-            string path0 = "C:\\Users\\b37709\\Desktop\\Arqui\\Proyecto\\hilillos\\hilillos0";
-            string path1 = "C:\\Users\\b37709\\Desktop\\Arqui\\Proyecto\\hilillos\\hilillos1";
+            string path0 = "C:\\Users\\jpvar\\Desktop\\Arqui\\hilillos0";
+            string path1 = "C:\\Users\\jpvar\\Desktop\\Arqui\\hilillos1";
 
             int indiceMem = 0;  // Para movernos por el array de la memoria principal
             int indiceMem1 = 0;
@@ -66,8 +66,8 @@ namespace Proyecto
                     }
                 }
 
-               /* Console.WriteLine("Instrucciones p0");
-                for (int i = 0; i < 50; ++i)
+                Console.WriteLine("Instrucciones p0");
+                for (int i = 0; i < 300; ++i)
                 {
                     Console.Write(procesador0.memInst[i] + "  ");
                 }
@@ -76,7 +76,7 @@ namespace Proyecto
                 for (int i = 0; i < inicioHilillo.Length; ++i)
                 {
                     Console.Write(inicioHilillo[i] + "  ");
-                }*/
+                }
             }
             else
             {
@@ -108,8 +108,8 @@ namespace Proyecto
                     }
                 }
 
-               /* Console.WriteLine("Instrucciones p1");
-                for (int i = 0; i < 50; ++i)
+                Console.WriteLine("Instrucciones p1");
+                for (int i = 0; i < 150; ++i)
                 {
                     Console.Write(procesador1.memInst[i] + "  ");
                 }
@@ -119,7 +119,7 @@ namespace Proyecto
                 for (int i = 0; i < inicioHilillo.Length; ++i)
                 {
                     Console.Write(inicioHilillo[i] + "  ");
-                }*/
+                }
             }
         
            

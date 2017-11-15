@@ -23,6 +23,11 @@ namespace Proyecto
             Console.WriteLine("PCs proc 1: ");
             cont.procesador1.crearColaContextos(temp2);
 
+            cont.procesador0.calcularBloque(0);
+            cont.procesador0.calcularBloque(1);
+            cont.procesador1.calcularBloque(0);
+
+
             /*Thread hiloPrincipal = new Thread(new ThreadStart(cont.iniciarPrograma));    // Se crea un nuevo hilo controlador
             hiloPrincipal.Start();  // Se inicia el hilo controlador
 
