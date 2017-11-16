@@ -17,8 +17,8 @@ namespace Proyecto
         public Controlador(int q) {
             quantum = q;
             sync = new Barrier(4); // Barrier con 4 participantes(los 3 núcleos y el hilo controlador)
-            procesador0 = new Procesador(0);
-            procesador1 = new Procesador(1);
+            procesador0 = new Procesador(0, q);
+            procesador1 = new Procesador(1, q);
             numeroHilos = 4;
             // sync = new Barrier(); 
           /*procesador0 = new Procesador(0,sync);
@@ -27,8 +27,8 @@ namespace Proyecto
 
         public int[] cargarTxt(int numProc)
         {
-            string path0 = "C:\\Users\\b37275\\Desktop\\Arqui\\Proyecto\\hilillos\\hilillos0";
-            string path1 = "C:\\Users\\b37275\\Desktop\\Arqui\\Proyecto\\hilillos\\hilillos1";
+            string path0 = "C:\\Users\\jpvar\\Desktop\\Arqui\\hilillos0";
+            string path1 = "C:\\Users\\jpvar\\Desktop\\Arqui\\hilillos1";
 
             int indiceMem = 0;  // Para movernos por el array de la memoria principal
             int indiceMem1 = 0;
@@ -151,6 +151,10 @@ namespace Proyecto
             {
                 procesador1.ejecutarInstruccion(procesador1.cacheInstN0);
             });
+
+            nucleo0.Start();
+            nucleo1.Start();
+            nucleo2.Start();
         }
 
      
