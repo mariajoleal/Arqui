@@ -28,9 +28,9 @@ namespace Proyecto
         //public int indiceInicioHilillo;//indice que se mueve sobre el array inicioHilillo
         //public int[] contexto;
 
-        public Procesador(int np)
+        public Procesador(int np, int q)
         {
-            //numProc = np;
+            quantum = q;
             if (np == 0)
             {
                 numProc = 0;
@@ -142,7 +142,8 @@ namespace Proyecto
             for(int i = 0; i < 16; ++i)
             {
                 cache[posCache, i] = bloque[i];
-            }              
+            }
+            cache[posCache, 16] = numBloque;              
         }
 
         public int[] sacarContexto()
@@ -165,17 +166,21 @@ namespace Proyecto
                     
             if(cache[posCache, 16] == numBloque)//pregunta si el bloque esta en cache
             {
+                int pcLocal = pc % 16;
                 for(int i = 0; i < 4; ++i)
                 {
-                    IR[i] = cache[posCache, i];
+                    IR[i] = cache[posCache, pcLocal];
+                    ++pcLocal;
                 }
             }
             else
             {
                 traerInstruccion(pc, cache);//trae la instruccion de memoria
+                int pcLocal = pc % 16;
                 for (int i = 0; i < 4; ++i)
                 {
-                    IR[i] = cache[posCache, i];
+                    IR[i] = cache[posCache, pcLocal];
+                    ++pcLocal;
                 }
             }
                      
@@ -220,6 +225,16 @@ namespace Proyecto
             
         }
 
+        public void imprimirRegistros(int[] registros)
+        {
+            Console.WriteLine("Registros hilillo");
+            for(int i = 0; i < 32; ++i)
+            {
+                Console.Write(registros[i] + "  ");
+            }
+            Console.WriteLine(" ");
+        }
+
         public void ejecutarInstruccion(int[,] cache)
         {
             while(colaContexto.Count != 0)
@@ -238,37 +253,46 @@ namespace Proyecto
                     {
                         case 2:     // JR
                             pc = registros[instruccion[1]];
+                            quantumLocal--;
                             break;
                         case 3:     // JAL
                             registros[31] = pc;
                             pc += instruccion[3];
+                            quantumLocal--;
                             break;
                         case 4:     // BEQZ
                             if (registros[instruccion[1]] == 0)
                             {
                                 pc += instruccion[3] * 4;
                             }
+                            quantumLocal--;
                             break;
                         case 5:     // BENZ
                             if (registros[instruccion[1]] != 0)
                             {
                                 pc += instruccion[3] * 4;
                             }
+                            quantumLocal--;
                             break;
                         case 8:     // DADDI
                             registros[instruccion[2]] = registros[instruccion[1]] + instruccion[3];
+                            quantumLocal--;
                             break;
                         case 12:    // DMUL
                             registros[instruccion[3]] = registros[instruccion[1]] * registros[instruccion[2]];
+                            quantumLocal--;
                             break;
                         case 14:    // DDIV
                             registros[instruccion[3]] = registros[instruccion[1]] / registros[instruccion[2]];
+                            quantumLocal--;
                             break;
                         case 32:    // DADD
                             registros[instruccion[3]] = registros[instruccion[1]] + registros[instruccion[2]];
+                            quantumLocal--;
                             break;
                         case 34:    // DSUB
                             registros[instruccion[3]] = registros[instruccion[1]] - registros[instruccion[2]];
+                            quantumLocal--;
                             break;
                         case 35:    // LW
                                     // Ejecutar LOAD    
@@ -278,6 +302,7 @@ namespace Proyecto
                             break;
                         case 63:    // Termino el hilillo
                             ++hilillosTerminados;
+                            imprimirRegistros(registros);
                             //Console.WriteLine("termine" + " " + numeroProcesador);
                             //Console.ReadKey();
                             pc = -1;    // "Stamp" para indicar que el hilillo ya se ejecutó en su totalidad
@@ -286,6 +311,7 @@ namespace Proyecto
                             break;
                     }
                 }
+                imprimirRegistros(registros);
             }
             
 
