@@ -14,7 +14,7 @@ namespace Proyecto
         public int[] memInst;
         public Queue<int[]> colaContexto;
         public int[,] directorio;
-        public int hilillosTerminados;
+        public List<int[]> hilillosTerminados;
 
         public int[] registrosN0;
         public int[] registrosN1;
@@ -24,13 +24,18 @@ namespace Proyecto
         public int[,] cacheInstN1;
         public int pc;
         int quantum;
+        public int reloj;
+
+        public Barrier sync;
         //public int[] inicioHilillo; //inicioHilillo[i] indica donde empieza el hilillo que esta en la posicion i 
         //public int indiceInicioHilillo;//indice que se mueve sobre el array inicioHilillo
         //public int[] contexto;
 
-        public Procesador(int np, int q)
+        public Procesador(int np, int q, Barrier sync)
         {
+            this.sync = sync;
             quantum = q;
+            reloj = 0; 
             if (np == 0)
             {
                 numProc = 0;
@@ -101,6 +106,8 @@ namespace Proyecto
             }
             //inicioHilillo = new int[4];
             //indiceInicioHilillo = 0;
+
+            hilillosTerminados = new List<int[]>();
         }
 
         /*public void setDireccionHilillo(int direccion)
@@ -113,7 +120,7 @@ namespace Proyecto
         {
             for(int i = 0; i < inicioHilillo.Length; ++i)
             {
-                int[] contexto = new int[33];
+                int[] contexto = new int[36]; // 32 registros + pc + numHilillo + tiempoInicio + tiempoFinal
                 contexto[32] = inicioHilillo[i];
                 colaContexto.Enqueue(contexto);
             }
@@ -128,7 +135,7 @@ namespace Proyecto
 
         public void traerInstruccion(int pc, int[,] cache)//sube de memoria el bloque donde esta la instruccion
         {
-                   
+            //Console.WriteLine("Pc traer instruccion "+pc);
             int numBloque = pc / 16;//calcula el numero de bloque donde esta la instruccion
             int[] bloque = new int[17];//array donde se va a guardar el bloque de instrucciones que se va a guardar en cache
             bloque[16] = numBloque;//pone en la ultima posicion del array el numero de bloque
@@ -148,10 +155,16 @@ namespace Proyecto
 
         public int[] sacarContexto()
         {
-            Monitor.Enter(this.colaContexto);
+            while(!(Monitor.TryEnter(this.colaContexto)))
+            {
 
-            int[] contexto = new int[33];//array donde se guarda el contexto que se saca de la cola de contextos
-            contexto = colaContexto.Dequeue();
+            }
+            int[] contexto = new int[36];//array donde se guarda el contexto que se saca de la cola de contextos 
+                                         // 32 registros + pc + numHilillo + tiempoInicio + tiempoFinal
+            if(colaContexto.Count != 0)
+            { 
+                contexto = colaContexto.Dequeue();
+            }
             Monitor.Exit(this.colaContexto);
             return contexto;
         }
@@ -242,7 +255,7 @@ namespace Proyecto
                 int[] registros = sacarContexto();
                 int pc = registros[32];
                 int quantumLocal = quantum;
-                while (quantumLocal != 0)
+                while (quantumLocal != 0 && pc != -1)
                 {
                     int[] instruccion = recuperarInstruccion(pc, cache);
                     pc += 4;
@@ -253,46 +266,37 @@ namespace Proyecto
                     {
                         case 2:     // JR
                             pc = registros[instruccion[1]];
-                            quantumLocal--;
                             break;
                         case 3:     // JAL
-                            registros[31] = pc;
+                            registros[30] = pc;
                             pc += instruccion[3];
-                            quantumLocal--;
                             break;
                         case 4:     // BEQZ
                             if (registros[instruccion[1]] == 0)
                             {
                                 pc += instruccion[3] * 4;
                             }
-                            quantumLocal--;
                             break;
                         case 5:     // BENZ
                             if (registros[instruccion[1]] != 0)
                             {
                                 pc += instruccion[3] * 4;
                             }
-                            quantumLocal--;
                             break;
                         case 8:     // DADDI
                             registros[instruccion[2]] = registros[instruccion[1]] + instruccion[3];
-                            quantumLocal--;
-                            break;
+                           break;
                         case 12:    // DMUL
                             registros[instruccion[3]] = registros[instruccion[1]] * registros[instruccion[2]];
-                            quantumLocal--;
-                            break;
+                           break;
                         case 14:    // DDIV
                             registros[instruccion[3]] = registros[instruccion[1]] / registros[instruccion[2]];
-                            quantumLocal--;
-                            break;
+                           break;
                         case 32:    // DADD
                             registros[instruccion[3]] = registros[instruccion[1]] + registros[instruccion[2]];
-                            quantumLocal--;
                             break;
                         case 34:    // DSUB
                             registros[instruccion[3]] = registros[instruccion[1]] - registros[instruccion[2]];
-                            quantumLocal--;
                             break;
                         case 35:    // LW
                                     // Ejecutar LOAD    
@@ -301,17 +305,32 @@ namespace Proyecto
                                     // Ejecutar STORE
                             break;
                         case 63:    // Termino el hilillo
-                            ++hilillosTerminados;
                             imprimirRegistros(registros);
                             //Console.WriteLine("termine" + " " + numeroProcesador);
                             //Console.ReadKey();
                             pc = -1;    // "Stamp" para indicar que el hilillo ya se ejecutó en su totalidad
-                                        //guardarContexto();
-                                        //cargarContexto();
                             break;
                     }
+                    quantumLocal--;
+                   sync.SignalAndWait();
+                    
                 }
-                imprimirRegistros(registros);
+                if (pc == -1)
+                {
+                    hilillosTerminados.Add(registros);
+                }
+                else
+                {
+                    registros[32] = pc;
+                    while(!(Monitor.TryEnter(colaContexto)))
+                    {
+
+                    }
+                    colaContexto.Enqueue(registros);
+                    Monitor.Exit(colaContexto);
+                }
+                // imprimirRegistros(registros);
+                
             }
             
 

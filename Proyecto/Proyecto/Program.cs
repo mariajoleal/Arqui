@@ -36,7 +36,7 @@ namespace Proyecto
 
             while (hiloPrincipal.IsAlive)   // El programa principal espera a que el hilo principal haya terminado
             {
-
+                //Console.Write("terminó \n");
             }
 
             Console.WriteLine("\nPresione cualquier tecla para salir del programa");

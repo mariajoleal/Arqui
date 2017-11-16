@@ -12,23 +12,24 @@ namespace Proyecto
         public Procesador procesador1;
         public Barrier sync;
         public int quantum;
-        int numeroHilos;
+        public int numeroHilos;
+        public int reloj;
 
         public Controlador(int q) {
             quantum = q;
             sync = new Barrier(4); // Barrier con 4 participantes(los 3 núcleos y el hilo controlador)
-            procesador0 = new Procesador(0, q);
-            procesador1 = new Procesador(1, q);
+            procesador0 = new Procesador(0, q, sync);
+            procesador1 = new Procesador(1, q, sync);
             numeroHilos = 4;
-            // sync = new Barrier(); 
+            reloj = 0;
           /*procesador0 = new Procesador(0,sync);
             procesador1 = new Procesador(1,sync); */ // Aquí 
         }
 
         public int[] cargarTxt(int numProc)
         {
-            string path0 = "C:\\Users\\jpvar\\Desktop\\Arqui\\hilillos0";
-            string path1 = "C:\\Users\\jpvar\\Desktop\\Arqui\\hilillos1";
+            string path0 = "C:\\Users\\Mariajo Leal\\Downloads\\4  HILILLOS SIN LW NI SW-v2\\hilillos0";
+            string path1 = "C:\\Users\\Mariajo Leal\\Downloads\\4  HILILLOS SIN LW NI SW-v2\\hilillos1";
 
             int indiceMem = 0;  // Para movernos por el array de la memoria principal
             int indiceMem1 = 0;
@@ -155,8 +156,50 @@ namespace Proyecto
             nucleo0.Start();
             nucleo1.Start();
             nucleo2.Start();
+            
+
+            controlarReloj(nucleo0, nucleo1, nucleo2);
+
         }
 
-     
-   }//clase controlador
+        // Incrementa el reloj del sistema mientras los hilos (procesadores) esten corriendo
+        public void controlarReloj(Thread n0, Thread n1, Thread n2)
+        {
+            bool n0Vivo = true;
+            bool n1Vivo = true;
+            bool n2Vivo = true;
+
+            Console.WriteLine("\nAvance del reloj:");
+
+            while (sync.ParticipantCount > 1)
+            {
+                if (!n0.IsAlive && n0Vivo)
+                {
+                    n0Vivo = false;
+                    sync.RemoveParticipant();
+                }
+                if (!n1.IsAlive && n1Vivo)
+                {
+                    n1Vivo = false;
+                    sync.RemoveParticipant();
+                }
+                if (!n2.IsAlive && n2Vivo)
+                {
+                    n2Vivo = false;
+                    sync.RemoveParticipant();
+                }
+
+                // Incrementa el reloj y lo asigna a los 3 procesadores
+                ++reloj;
+                ++this.procesador0.reloj;
+                ++this.procesador1.reloj;
+                sync.SignalAndWait();   // Envia una señal y espera a que los 3 procesadores ejecuten envien señal
+
+                //Console.WriteLine(reloj);
+            }
+        }
+
+
+
+    }//clase controlador
 }//namespace proyecto
