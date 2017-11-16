@@ -140,17 +140,17 @@ namespace Proyecto
         {
             Thread nucleo0 = new Thread(delegate ()
             {
-                procesador0.ejecutarInstruccion(procesador0.cacheInstN0);
+                procesador0.ejecutarInstruccion(procesador0.cacheInstN0,0);
             });
 
             Thread nucleo1 = new Thread(delegate ()
             {
-                procesador0.ejecutarInstruccion(procesador0.cacheInstN1);
+                procesador0.ejecutarInstruccion(procesador0.cacheInstN1,1);
             });
 
             Thread nucleo2 = new Thread(delegate ()
             {
-                procesador1.ejecutarInstruccion(procesador1.cacheInstN0);
+                procesador1.ejecutarInstruccion(procesador1.cacheInstN0,2);
             });
 
             nucleo0.Start();
@@ -169,7 +169,7 @@ namespace Proyecto
             bool n1Vivo = true;
             bool n2Vivo = true;
 
-            Console.WriteLine("\nAvance del reloj:");
+            Console.WriteLine("\nAvance del reloj: " + reloj);
 
             while (sync.ParticipantCount > 1)
             {

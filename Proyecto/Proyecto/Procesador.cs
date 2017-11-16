@@ -122,6 +122,7 @@ namespace Proyecto
             {
                 int[] contexto = new int[36]; // 32 registros + pc + numHilillo + tiempoInicio + tiempoFinal
                 contexto[32] = inicioHilillo[i];
+                contexto[33] = i;
                 colaContexto.Enqueue(contexto);
             }
             int count = colaContexto.Count;
@@ -240,7 +241,7 @@ namespace Proyecto
 
         public void imprimirRegistros(int[] registros)
         {
-            Console.WriteLine("Registros hilillo");
+            Console.WriteLine("Registros hilillo " + registros[33]);
             for(int i = 0; i < 32; ++i)
             {
                 Console.Write(registros[i] + "  ");
@@ -248,8 +249,9 @@ namespace Proyecto
             Console.WriteLine(" ");
         }
 
-        public void ejecutarInstruccion(int[,] cache)
+        public void ejecutarInstruccion(int[,] cache, int numNuc)
         {
+            
             while(colaContexto.Count != 0)
             {
                 int[] registros = sacarContexto();
@@ -260,8 +262,8 @@ namespace Proyecto
                     int[] instruccion = recuperarInstruccion(pc, cache);
                     pc += 4;
                     int codOp = instruccion[0];
-                    
 
+                    //Console.WriteLine("Corriendo hilillo " + registros[33] + " en el núcleo " + numNuc);
                     switch (codOp)
                     {
                         case 2:     // JR
@@ -329,13 +331,15 @@ namespace Proyecto
                     colaContexto.Enqueue(registros);
                     Monitor.Exit(colaContexto);
                 }
-                // imprimirRegistros(registros);
+                 
                 
             }
-            
-
-            
-            
+            /*
+            for (int i = 0; i < hilillosTerminados.Count; ++i)
+            {
+                imprimirRegistros(hilillosTerminados[i]);
+            } 
+            */
         }
     }//clase procesador
     
