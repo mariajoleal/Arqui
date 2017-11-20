@@ -28,8 +28,8 @@ namespace Proyecto
 
         public int[] cargarTxt(int numProc)
         {
-            string path0 = "C:\\Users\\b37275\\Desktop\\Arqui\\hilillos\\hilillos0";
-            string path1 = "C:\\Users\\b37275\\Desktop\\Arqui\\hilillos\\hilillos1";
+            string path0 = "C:\\Users\\b37275\\Desktop\\Arqui\\hilillos0";
+            string path1 = "C:\\Users\\b37275\\Desktop\\Arqui\\hilillos1";
 
             int indiceMem = 0;  // Para movernos por el array de la memoria principal
             int indiceMem1 = 0;
@@ -140,22 +140,22 @@ namespace Proyecto
         {
             Thread nucleo0 = new Thread(delegate ()
             {
-                procesador0.ejecutarInstruccion(procesador0.cacheInstN0,0);
+                procesador0.ejecutarInstruccion(ref procesador0.cacheInstN0, ref procesador0.cacheDatosN0, 0, ref procesador0.cacheDatosN1, ref procesador1.cacheDatosN0, ref procesador0.directorio, ref procesador1.directorio, ref procesador0.memPrinc, ref procesador1.memPrinc );
             });
 
             Thread nucleo1 = new Thread(delegate ()
             {
-                procesador0.ejecutarInstruccion(procesador0.cacheInstN1,1);
+               // procesador0.ejecutarInstruccion(procesador0.cacheInstN1,1);
             });
 
             Thread nucleo2 = new Thread(delegate ()
             {
-                procesador1.ejecutarInstruccion(procesador1.cacheInstN0,2);
+               // procesador1.ejecutarInstruccion(procesador1.cacheInstN0,2);
             });
 
             nucleo0.Start();
-            nucleo1.Start();
-            nucleo2.Start();
+            //nucleo1.Start();
+            //nucleo2.Start();
             
 
             controlarReloj(nucleo0, nucleo1, nucleo2);

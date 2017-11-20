@@ -260,7 +260,7 @@ namespace Proyecto
             Console.WriteLine(" ");
         }
 
-        public void ejecutarInstruccion(int[,] cache, int numNuc)
+        public void ejecutarInstruccion(ref int[,] cache, ref cacheDatos cachePropia, int numNuc, ref cacheDatos cache1, ref cacheDatos cache2, ref int[,] directorioP0, ref int[,] directorioP1, ref int[] memDatosP0, ref int[] memDatosP1)
         {
             
             while(colaContexto.Count != 0)
@@ -298,13 +298,13 @@ namespace Proyecto
                             break;
                         case 8:     // DADDI
                             registros[instruccion[2]] = registros[instruccion[1]] + instruccion[3];
-                           break;
+                            break;
                         case 12:    // DMUL
                             registros[instruccion[3]] = registros[instruccion[1]] * registros[instruccion[2]];
-                           break;
+                            break;
                         case 14:    // DDIV
                             registros[instruccion[3]] = registros[instruccion[1]] / registros[instruccion[2]];
-                           break;
+                            break;
                         case 32:    // DADD
                             registros[instruccion[3]] = registros[instruccion[1]] + registros[instruccion[2]];
                             break;
@@ -312,7 +312,17 @@ namespace Proyecto
                             registros[instruccion[3]] = registros[instruccion[1]] - registros[instruccion[2]];
                             break;
                         case 35:    // LW
-                                    // Ejecutar LOAD    
+                            int direccion = instruccion[1] + instruccion[3];
+                            int[] resultadoLW = ejecutarLW(ref cachePropia, ref cache1, ref cache2, ref directorioP0, ref directorioP1, direccion, ref memDatosP0, ref memDatosP1);
+                            if (resultadoLW[1] == 1)
+                            {
+                                registros[instruccion[2]] = resultadoLW[0];
+                            }
+                            else
+                            {
+                                pc -= 4;
+                            }
+                                    
                             break;
                         case 43:    // SW
                                     // Ejecutar STORE
@@ -406,7 +416,7 @@ namespace Proyecto
                                 {
                                     try
                                     {
-                                        int indiceMem = bloqueVictima * 16;
+                                        int indiceMem = bloqueVictima * 4 - 64;
                                         for (int i = 0; i < 4; ++i)//sube el bloque a la cache propia
                                         {
                                             memDatosP1[indiceMem] = cache1.cache[posCache, i];
@@ -601,7 +611,7 @@ namespace Proyecto
                                             {
                                                 try
                                                 {
-                                                    int indiceMem = direccion;
+                                                    int indiceMem = direccion - 64;
                                                     for (int i = 0; i < 4; ++i)//sube el bloque a la cache propia
                                                     {
                                                         memDatosP1[indiceMem] = cache1.cache[posCache, i];
@@ -635,7 +645,7 @@ namespace Proyecto
                                             {
                                                 try
                                                 {
-                                                    int indiceMem = direccion;
+                                                    int indiceMem = direccion - 64;
                                                     for (int i = 0; i < 4; ++i)//sube el bloque a la cache propia
                                                     {
                                                         memDatosP1[indiceMem] = cache2.cache[posCache, i];
@@ -666,7 +676,7 @@ namespace Proyecto
                                     }
                                     else//bloque compartido o uncached
                                     {
-                                        int indiceMem = direccion;
+                                        int indiceMem = direccion - 64;
                                         for (int i = 0; i < 4; ++i)//sube el bloque a la cache propia
                                         {
                                             cachePropia.cache[posCache, i] = memDatosP1[indiceMem];
