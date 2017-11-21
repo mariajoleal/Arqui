@@ -145,17 +145,17 @@ namespace Proyecto
 
             Thread nucleo1 = new Thread(delegate ()
             {
-               // procesador0.ejecutarInstruccion(procesador0.cacheInstN1,1);
+                procesador0.ejecutarInstruccion(ref procesador0.cacheInstN1, ref procesador0.cacheDatosN1, 1, ref procesador0.cacheDatosN0, ref procesador1.cacheDatosN0, ref procesador0.directorio, ref procesador1.directorio, ref procesador0.memPrinc, ref procesador1.memPrinc);
             });
 
             Thread nucleo2 = new Thread(delegate ()
             {
-               // procesador1.ejecutarInstruccion(procesador1.cacheInstN0,2);
+                procesador1.ejecutarInstruccion(ref procesador1.cacheInstN0, ref procesador1.cacheDatosN0, 2, ref procesador0.cacheDatosN0, ref procesador0.cacheDatosN1, ref procesador1.directorio, ref procesador0.directorio, ref procesador1.memPrinc, ref procesador0.memPrinc);
             });
 
-            nucleo0.Start();
-            //nucleo1.Start();
-            //nucleo2.Start();
+            //nucleo0.Start();
+            nucleo1.Start();
+            nucleo2.Start();
             
 
             controlarReloj(nucleo0, nucleo1, nucleo2);
