@@ -131,7 +131,7 @@ namespace Proyecto
             int[] temp1 = cargarTxt(0);
             int[] temp2 = cargarTxt(1);
             procesador0.crearColaContextos(temp1);
-            procesador1.crearColaContextos(temp2);
+            procesador1.crearColaContextos1(temp2);
             crearHilos();
            
         }
@@ -153,7 +153,7 @@ namespace Proyecto
                 procesador1.ejecutarInstruccion(ref procesador1.cacheInstN0, ref procesador1.cacheDatosN0, 2, ref procesador0.cacheDatosN0, ref procesador0.cacheDatosN1, ref procesador1.directorio, ref procesador0.directorio, ref procesador1.memPrinc, ref procesador0.memPrinc);
             });
 
-            //nucleo0.Start();
+            nucleo0.Start();
             nucleo1.Start();
             nucleo2.Start();
             

@@ -52,7 +52,7 @@ namespace Proyecto
                 numProc = 0;
                 
                 //inicializacion de la memoria
-                memPrinc = new int[64];
+                memPrinc = new int[256];
                 memInst = new int[384];
                 directorio = new int[16, 5];
                // contexto = new int[33];
@@ -88,7 +88,7 @@ namespace Proyecto
                 numProc = 1;
             
                 //inicializacion de la memoria
-                memPrinc = new int[32];
+                memPrinc = new int[128];
                 memInst = new int[256];
                 directorio = new int[8, 5];
                 colaContexto = new Queue<int[]>();
@@ -132,38 +132,56 @@ namespace Proyecto
             for(int i = 0; i < inicioHilillo.Length; ++i)
             {
                 int[] contexto = new int[36]; // 32 registros + pc + numHilillo + tiempoInicio + tiempoFinal
-                contexto[32] = inicioHilillo[i];
+                contexto[32] = inicioHilillo[i] + 256;
                 contexto[33] = i;
                 colaContexto.Enqueue(contexto);
             }
             int count = colaContexto.Count;
-           /* Console.WriteLine("colaContexto.Count = " + colaContexto.Count);
-            for (int i = 0; i < count; ++i)
-            {
-                int[] temp = colaContexto.Dequeue();
-                Console.WriteLine(temp[32]);
-            }*/
         }
 
-        public void traerInstruccion(int pc, int[,] cache)//sube de memoria el bloque donde esta la instruccion
+        public void crearColaContextos1(int[] inicioHilillo)
+        {
+            for (int i = 0; i < inicioHilillo.Length; ++i)
+            {
+                int[] contexto = new int[36]; // 32 registros + pc + numHilillo + tiempoInicio + tiempoFinal
+                contexto[32] = inicioHilillo[i] + 128;
+                contexto[33] = i;
+                colaContexto.Enqueue(contexto);
+            }
+            int count = colaContexto.Count;
+        }
+
+        public void traerInstruccion(int pc, ref int[,] cache, int numNuc)//sube de memoria el bloque donde esta la instruccion
         {
             //Console.WriteLine("Pc traer instruccion "+pc);
             int numBloque = pc / 16;//calcula el numero de bloque donde esta la instruccion
+            int numPalabra = (pc % 16) / 4;
             int[] bloque = new int[17];//array donde se va a guardar el bloque de instrucciones que se va a guardar en cache
             bloque[16] = numBloque;//pone en la ultima posicion del array el numero de bloque
-           // int pcLocal = pc % 16;
-            for (int i = 0; i < 16; ++i)
-            {
-                bloque[i] = memInst[pc];
-                ++pc;
-            }
+                                   // int pcLocal = pc % 16;
+           int indiceMem;
+           if (numNuc == 0 || numNuc == 1)
+           {
+               indiceMem = (pc - 256) - numPalabra * 4;
+           }
+           else
+           {
+               indiceMem = (pc - 128) - numPalabra * 4;
+           }
+            Monitor.Enter(memInst);
+           for (int i = 0; i < 16; ++i)
+           {
+               bloque[i] = memInst[indiceMem];
+               ++indiceMem;
+           }
+            Monitor.Exit(memInst);
 
-            int posCache = numBloque % 4;
-            for(int i = 0; i < 16; ++i)
-            {
-                cache[posCache, i] = bloque[i];
-            }
-            cache[posCache, 16] = numBloque;              
+           int posCache = numBloque % 4;
+           for(int i = 0; i < 16; ++i)
+           {
+               cache[posCache, i] = bloque[i];
+           }
+           cache[posCache, 16] = numBloque;              
         }
 
         public int[] sacarContexto()
@@ -182,15 +200,16 @@ namespace Proyecto
             return contexto;
         }
 
-        public int[] recuperarInstruccion(int pc, int[,] cache)//el parametro nucleo es para saber a cual cache se tiene que subir el bloque
+        public int[] recuperarInstruccion(int pc, ref int[,] cache, int numNuc)//el parametro nucleo es para saber a cual cache se tiene que subir el bloque
         {
 
             int[] IR = new int[4];
             
             int numBloque = pc / 16;//calcula el numero de bloque donde esta la instruccion
             int posCache = numBloque % 4;
-                    
-            if(cache[posCache, 16] == numBloque)//pregunta si el bloque esta en cache
+
+            Monitor.Enter(cache);
+            if (cache[posCache, 16] == numBloque)//pregunta si el bloque esta en cache
             {
                 int pcLocal = pc % 16;
                 for(int i = 0; i < 4; ++i)
@@ -201,7 +220,7 @@ namespace Proyecto
             }
             else
             {
-                traerInstruccion(pc, cache);//trae la instruccion de memoria
+                traerInstruccion(pc, ref cache, numNuc);//trae la instruccion de memoria
                 int pcLocal = pc % 16;
                 for (int i = 0; i < 4; ++i)
                 {
@@ -209,7 +228,7 @@ namespace Proyecto
                     ++pcLocal;
                 }
             }
-                     
+            Monitor.Exit(cache);         
             return IR;
         }
 
@@ -267,11 +286,11 @@ namespace Proyecto
             while(colaContexto.Count != 0)
             {
                 int[] registros = sacarContexto();
-                int pc = registros[32];
+                int pc = registros[32] ;
                 int quantumLocal = quantum;
                 while (quantumLocal != 0 && pc != -1)
                 {
-                    int[] instruccion = recuperarInstruccion(pc, cache);
+                    int[] instruccion = recuperarInstruccion(pc, ref cache, numNuc);
                     pc += 4;
                     int codOp = instruccion[0];
 
