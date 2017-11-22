@@ -53,6 +53,10 @@ namespace Proyecto
                 
                 //inicializacion de la memoria
                 memPrinc = new int[256];
+                for(int i = 0; i < 256; ++i)
+                {
+                    memPrinc[i] = 1;
+                }
                 memInst = new int[384];
                 directorio = new int[16, 5];
                // contexto = new int[33];
@@ -89,6 +93,10 @@ namespace Proyecto
             
                 //inicializacion de la memoria
                 memPrinc = new int[128];
+                for (int i = 0; i < 128; ++i)
+                {
+                    memPrinc[i] = 1;
+                }
                 memInst = new int[256];
                 directorio = new int[8, 5];
                 colaContexto = new Queue<int[]>();
@@ -333,7 +341,7 @@ namespace Proyecto
                             break;
                         case 35:    // LW
                             int direccion = instruccion[1] + instruccion[3];
-                            int[] resultadoLW = ejecutarLW(ref cachePropia, ref cache1, ref cache2, ref directorioP0, ref directorioP1, direccion, ref memDatosP0, ref memDatosP1);
+                            int[] resultadoLW = ejecutarLW(ref cachePropia, ref cache1, ref cache2, ref directorioP0, ref directorioP1, direccion, ref memDatosP0, ref memDatosP1, numNuc);
                             if (resultadoLW[1] == 1)
                             {
                                 registros[instruccion[2]] = resultadoLW[0];
@@ -383,7 +391,7 @@ namespace Proyecto
             */
         }
 
-        public int[] ejecutarLW(ref cacheDatos cachePropia, ref cacheDatos cache1, ref cacheDatos cache2, ref int[,] directorioP0, ref int[,] directorioP1, int direccion, ref int[] memDatosP0, ref int[] memDatosP1)
+        public int[] ejecutarLW(ref cacheDatos cachePropia, ref cacheDatos cache1, ref cacheDatos cache2, ref int[,] directorioP0, ref int[,] directorioP1, int direccion, ref int[] memDatosP0, ref int[] memDatosP1, int numNuc)
         {
             int numBloque = direccion / 16;
             int numPalabra = (direccion % 16) / 4;
@@ -413,8 +421,8 @@ namespace Proyecto
                                 {
                                     try
                                     {
-                                        int indiceMem = bloqueVictima * 16;
-                                        for (int i = 0; i < 4; ++i)//sube el bloque a la cache propia
+                                        int indiceMem = bloqueVictima * 16;                                        
+                                        for (int i = 0; i < 4; ++i)//baja bloque victima a memoria
                                         {
                                             memDatosP0[indiceMem] = cache1.cache[posCache, i];
                                             indiceMem++;
@@ -427,6 +435,7 @@ namespace Proyecto
                                 }
                                 else
                                 {
+                                    Monitor.Exit(cachePropia.cache);
                                     registro[1] = 0;//valor invalido
                                     
                                 }
@@ -437,7 +446,7 @@ namespace Proyecto
                                 {
                                     try
                                     {
-                                        int indiceMem = bloqueVictima * 4 - 64;
+                                        int indiceMem = bloqueVictima * 16 - 256;
                                         for (int i = 0; i < 4; ++i)//sube el bloque a la cache propia
                                         {
                                             memDatosP1[indiceMem] = cache1.cache[posCache, i];
@@ -451,8 +460,8 @@ namespace Proyecto
                                 }
                                 else
                                 {
-                                    registro[1] = 0;//valor invalido
-                                    
+                                    Monitor.Exit(cachePropia.cache);
+                                    registro[1] = 0;//valor invalido                          
                                 }
                             }
                             
@@ -491,6 +500,7 @@ namespace Proyecto
                                                             for (int i = 0; i < 4; ++i)//sube el bloque a la cache propia
                                                             {
                                                                 memDatosP0[indiceMem] = cache1.cache[posCache, i];
+                                                                cachePropia.cache[posCache, i] = cache1.cache[posCache, i];
                                                                 indiceMem++;
                                                             }
                                                         }
@@ -498,21 +508,21 @@ namespace Proyecto
                                                         {
                                                             Monitor.Exit(memDatosP0);
                                                         }
+                                                        cachePropia.cache[posCache, 4] = cache1.cache[posCache, 4];
+                                                        cachePropia.cache[posCache, 5] = cache1.cache[posCache, 5];
+                                                        registro[0] = cachePropia.cache[posCache, numPalabra];
+                                                        registro[1] = 1;
+                                                        directorioP0[numBloque, cache1.idCache + 2] = 1;//pone el bloque compartido en la cache que lo tenia modificado
+                                                        directorioP0[numBloque, cachePropia.idCache + 2] = 1;//pone el bloque compartido en la cache propia
                                                     }
                                                     else
                                                     {
+                                                        Monitor.Exit(cachePropia.cache);
+                                                        Monitor.Exit(directorioP0);
+                                                        Monitor.Exit(cache1.cache);
                                                         registro[1] = 0;//valor invalido
                                                         
-                                                    }
-                                                    for (int i = 0; i < 6; ++i)//sube el bloque a la cache propia
-                                                    {
-                                                        cachePropia.cache[posCache, i] = cache1.cache[posCache, i];
-                                                    }
-                                                    registro[0] = cachePropia.cache[posCache, numPalabra];
-                                                    registro[1] = 1;
-                                                    directorioP0[numBloque, cache1.idCache + 2] = 1;//pone el bloque compartido en la cache que lo tenia modificado
-                                                    directorioP0[numBloque, cachePropia.idCache + 2] = 1;//pone el bloque compartido en la cache propia
-                                                    
+                                                    }      
                                                 }
                                                 finally
                                                 {
@@ -521,6 +531,8 @@ namespace Proyecto
                                             }
                                             else
                                             {
+                                                Monitor.Exit(cachePropia.cache);
+                                                Monitor.Exit(directorioP0);
                                                 registro[1] = 0;//valor invalido
                                                 
                                             }
@@ -538,10 +550,11 @@ namespace Proyecto
                                                     {
                                                         try
                                                         {
-                                                            int indiceMem = direccion;
+                                                            int indiceMem = direccion * 16;
                                                             for (int i = 0; i < 4; ++i)//sube el bloque a la cache propia
                                                             {
-                                                                memDatosP0[indiceMem] = cache2.cache[posCache, i];
+                                                                memDatosP0[indiceMem] = cache1.cache[posCache, i];
+                                                                cachePropia.cache[posCache, i] = cache1.cache[posCache, i];
                                                                 indiceMem++;
                                                             }
                                                         }
@@ -549,22 +562,21 @@ namespace Proyecto
                                                         {
                                                             Monitor.Exit(memDatosP0);
                                                         }
+                                                        cachePropia.cache[posCache, 4] = cache2.cache[posCache, 4];
+                                                        cachePropia.cache[posCache, 5] = cache2.cache[posCache, 5];
+                                                        registro[0] = cachePropia.cache[posCache, numPalabra];
+                                                        registro[1] = 1;
+                                                        directorioP0[numBloque, cache2.idCache + 2] = 1;//pone el bloque compartido en la cache que lo tenia modificado
+                                                        directorioP0[numBloque, cachePropia.idCache + 2] = 1;//pone el bloque compartido en la cache propia
                                                     }
                                                     else
                                                     {
+                                                        Monitor.Exit(cachePropia.cache);
+                                                        Monitor.Exit(directorioP0);
+                                                        Monitor.Exit(cache2.cache);
                                                         registro[1] = 0;//valor invalido
                                                         
                                                     }
-
-
-                                                    for (int i = 0; i < 6; ++i)//sube el bloque a la cache propia
-                                                    {
-                                                        cachePropia.cache[posCache, i] = cache2.cache[posCache, i];
-                                                    }
-                                                    registro[0] = cachePropia.cache[posCache, numPalabra];
-                                                    registro[1] = 1;
-                                                    directorioP0[numBloque, cache2.idCache + 2] = 1;//pone el bloque compartido en la cache que lo tenia modificado
-                                                    directorioP0[numBloque, cachePropia.idCache + 2] = 1;//pone el bloque compartido en la cache propia
                                                     
                                                 }
                                                 finally
@@ -574,8 +586,9 @@ namespace Proyecto
                                             }
                                             else
                                             {
-                                                registro[1] = 0;//valor invalido
-                                                
+                                                Monitor.Exit(cachePropia.cache);
+                                                Monitor.Exit(directorioP0);
+                                                registro[1] = 0;//valor invalido   
                                             }
                                         }
 
@@ -583,6 +596,7 @@ namespace Proyecto
                                     else//bloque compartido o uncached
                                     {
                                         int indiceMem = direccion;
+                                        
                                         for (int i = 0; i < 4; ++i)//sube el bloque a la cache propia
                                         {
                                             cachePropia.cache[posCache, i] = memDatosP0[indiceMem];
@@ -603,6 +617,8 @@ namespace Proyecto
                             }
                             else
                             {
+                                Monitor.Exit(cachePropia.cache);
+                                Monitor.Exit(directorioP0);
                                 registro[1] = 0;//valor invalido
                                 
                             }
@@ -632,31 +648,33 @@ namespace Proyecto
                                             {
                                                 try
                                                 {
-                                                    int indiceMem = direccion - 64;
+                                                    int indiceMem = direccion - 256;
                                                     for (int i = 0; i < 4; ++i)//sube el bloque a la cache propia
                                                     {
                                                         memDatosP1[indiceMem] = cache1.cache[posCache, i];
+                                                        cachePropia.cache[posCache, i] = cache1.cache[posCache, i];
                                                         indiceMem++;
                                                     }
+
                                                 }
                                                 finally
                                                 {
                                                     Monitor.Exit(memDatosP1);
                                                 }
+                                                cachePropia.cache[posCache, 4] = cache1.cache[posCache, 4];
+                                                cachePropia.cache[posCache, 5] = cache1.cache[posCache, 5];
+                                                registro[0] = cachePropia.cache[posCache, numPalabra];
+                                                registro[1] = 1;
+                                                directorioP1[numBloque, cache1.idCache + 2] = 1;//pone el bloque compartido en la cache que lo tenia modificado
+                                                directorioP1[numBloque, cachePropia.idCache + 2] = 1;//pone el bloque compartido en la cache propia
                                             }
                                             else
                                             {
-                                                registro[1] = 0;//valor invalido
-                                                
+                                                Monitor.Exit(cachePropia.cache);
+                                                Monitor.Exit(directorioP1);
+                                                registro[1] = 0;//valor invalido  
                                             }
-                                            for (int i = 0; i < 6; ++i)//sube el bloque a la cache propia
-                                            {
-                                                cachePropia.cache[posCache, i] = cache1.cache[posCache, i];
-                                            }
-                                            registro[0] = cachePropia.cache[posCache, numPalabra];
-                                            registro[1] = 1;
-                                            directorioP1[numBloque, cache1.idCache + 2] = 1;//pone el bloque compartido en la cache que lo tenia modificado
-                                            directorioP1[numBloque, cachePropia.idCache + 2] = 1;//pone el bloque compartido en la cache propia
+                                            
                                             
                                         }
                                         else if (cache2.idCache == cacheModificado)
@@ -666,10 +684,11 @@ namespace Proyecto
                                             {
                                                 try
                                                 {
-                                                    int indiceMem = direccion - 64;
+                                                    int indiceMem = direccion - 256;
                                                     for (int i = 0; i < 4; ++i)//sube el bloque a la cache propia
                                                     {
                                                         memDatosP1[indiceMem] = cache2.cache[posCache, i];
+                                                        cachePropia.cache[posCache, i] = cache2.cache[posCache, i];
                                                         indiceMem++;
                                                     }
                                                 }
@@ -677,27 +696,26 @@ namespace Proyecto
                                                 {
                                                     Monitor.Exit(memDatosP1);
                                                 }
+                                                cachePropia.cache[posCache, 4] = cache2.cache[posCache, 4];
+                                                cachePropia.cache[posCache, 5] = cache2.cache[posCache, 5];
+                                                registro[0] = cachePropia.cache[posCache, numPalabra];
+                                                registro[1] = 1;
+                                                directorioP1[numBloque, cache2.idCache + 2] = 1;//pone el bloque compartido en la cache que lo tenia modificado
+                                                directorioP1[numBloque, cachePropia.idCache + 2] = 1;//pone el bloque compartido en la cache propia
                                             }
                                             else
                                             {
-                                                registro[1] = 0;//valor invalido
-                                               
+                                                Monitor.Exit(cachePropia.cache);
+                                                Monitor.Exit(cache2.cache);
+                                                Monitor.Exit(directorioP1);
+                                                registro[1] = 0;//valor invalido   
                                             }
-                                            for (int i = 0; i < 6; ++i)//sube el bloque a la cache propia
-                                            {
-                                                cachePropia.cache[posCache, i] = cache2.cache[posCache, i];
-                                            }
-                                            registro[0] = cachePropia.cache[posCache, numPalabra];
-                                            registro[1] = 1;
-                                            directorioP1[numBloque, cache2.idCache + 2] = 1;//pone el bloque compartido en la cache que lo tenia modificado
-                                            directorioP1[numBloque, cachePropia.idCache + 2] = 1;//pone el bloque compartido en la cache propia
-                                            
                                         }
 
                                     }
                                     else//bloque compartido o uncached
                                     {
-                                        int indiceMem = direccion - 64;
+                                        int indiceMem = direccion - 256;
                                         for (int i = 0; i < 4; ++i)//sube el bloque a la cache propia
                                         {
                                             cachePropia.cache[posCache, i] = memDatosP1[indiceMem];
@@ -707,8 +725,7 @@ namespace Proyecto
                                         cachePropia.cache[posCache, 5] = 1;//compartido
                                         registro[0] = cachePropia.cache[posCache, numPalabra];
                                         registro[1] = 1;
-                                        directorioP1[numBloque, cachePropia.idCache + 2] = 1;//pone el bloque compartido en la cache propia
-                                        
+                                        directorioP1[numBloque, cachePropia.idCache + 2] = 1;//pone el bloque compartido en la cache propia  
                                     }
                                 }
                                 finally
@@ -718,6 +735,7 @@ namespace Proyecto
                             }
                             else
                             {
+                                Monitor.Exit(cachePropia.cache);
                                 registro[1] = 0;//valor invalido
                                 
                             }
