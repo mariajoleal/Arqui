@@ -427,6 +427,21 @@ namespace Proyecto
                                             memDatosP0[indiceMem] = cache1.cache[posCache, i];
                                             indiceMem++;
                                         }
+
+                                        if (numNuc == 0 || numNuc == 1)
+                                        {
+                                            for (int i = 0; i < 16; ++i)
+                                            {
+                                                sync.SignalAndWait();
+                                            }
+                                        }
+                                        else
+                                        {
+                                            for (int i = 0; i < 40; ++i)
+                                            {
+                                                sync.SignalAndWait();
+                                            }
+                                        }
                                     }
                                     finally
                                     {
@@ -435,9 +450,10 @@ namespace Proyecto
                                 }
                                 else
                                 {
-                                    Monitor.Exit(cachePropia.cache);
+                                    //Monitor.Exit(cachePropia.cache);
                                     registro[1] = 0;//valor invalido
-                                    
+                                    //return registro;
+
                                 }
                             }
                             else
@@ -452,6 +468,21 @@ namespace Proyecto
                                             memDatosP1[indiceMem] = cache1.cache[posCache, i];
                                             indiceMem++;
                                         }
+
+                                        if (numNuc == 0 || numNuc == 1)
+                                        {
+                                            for (int i = 0; i < 40; ++i)
+                                            {
+                                                sync.SignalAndWait();
+                                            }
+                                        }
+                                        else
+                                        {
+                                            for (int i = 0; i < 16; ++i)
+                                            {
+                                                sync.SignalAndWait();
+                                            }
+                                        }
                                     }
                                     finally
                                     {
@@ -460,8 +491,9 @@ namespace Proyecto
                                 }
                                 else
                                 {
-                                    Monitor.Exit(cachePropia.cache);
-                                    registro[1] = 0;//valor invalido                          
+                                    //Monitor.Exit(cachePropia.cache);
+                                    registro[1] = 0;//valor invalido 
+                                   // return registro;
                                 }
                             }
                             
@@ -471,8 +503,21 @@ namespace Proyecto
                         {
                             if (Monitor.TryEnter(directorioP0))
                             {
+
                                 try
                                 {
+                                    if(numNuc == 0 || numNuc == 1)
+                                    {
+                                        sync.SignalAndWait();
+                                    }
+                                    else
+                                    {
+                                        for(int i = 0; i < 5; ++i)
+                                        {
+                                            sync.SignalAndWait();
+                                        }
+                                    }
+                                    
                                     if (directorioP0[numBloque, 1] == 2)//esta modificado en otra cache
                                     {
                                         int cacheModificado = -1;
@@ -503,6 +548,20 @@ namespace Proyecto
                                                                 cachePropia.cache[posCache, i] = cache1.cache[posCache, i];
                                                                 indiceMem++;
                                                             }
+                                                            if (numNuc == 0 || numNuc == 1)
+                                                            {
+                                                                for (int i = 0; i < 16; ++i)
+                                                                {
+                                                                    sync.SignalAndWait();
+                                                                }
+                                                            }
+                                                            else
+                                                            {
+                                                                for (int i = 0; i < 40; ++i)
+                                                                {
+                                                                    sync.SignalAndWait();
+                                                                }
+                                                            }
                                                         }
                                                         finally
                                                         {
@@ -517,11 +576,12 @@ namespace Proyecto
                                                     }
                                                     else
                                                     {
-                                                        Monitor.Exit(cachePropia.cache);
+                                                        //Monitor.Exit(cachePropia.cache);
                                                         Monitor.Exit(directorioP0);
                                                         Monitor.Exit(cache1.cache);
                                                         registro[1] = 0;//valor invalido
-                                                        
+                                                        //return registro;
+
                                                     }      
                                                 }
                                                 finally
@@ -531,10 +591,11 @@ namespace Proyecto
                                             }
                                             else
                                             {
-                                                Monitor.Exit(cachePropia.cache);
+                                               // Monitor.Exit(cachePropia.cache);
                                                 Monitor.Exit(directorioP0);
                                                 registro[1] = 0;//valor invalido
-                                                
+                                                //return registro;
+
                                             }
 
                                         }
@@ -557,6 +618,20 @@ namespace Proyecto
                                                                 cachePropia.cache[posCache, i] = cache1.cache[posCache, i];
                                                                 indiceMem++;
                                                             }
+                                                            if (numNuc == 0 || numNuc == 1)
+                                                            {
+                                                                for (int i = 0; i < 16; ++i)
+                                                                {
+                                                                    sync.SignalAndWait();
+                                                                }
+                                                            }
+                                                            else
+                                                            {
+                                                                for (int i = 0; i < 40; ++i)
+                                                                {
+                                                                    sync.SignalAndWait();
+                                                                }
+                                                            }
                                                         }
                                                         finally
                                                         {
@@ -571,11 +646,12 @@ namespace Proyecto
                                                     }
                                                     else
                                                     {
-                                                        Monitor.Exit(cachePropia.cache);
+                                                       // Monitor.Exit(cachePropia.cache);
                                                         Monitor.Exit(directorioP0);
                                                         Monitor.Exit(cache2.cache);
                                                         registro[1] = 0;//valor invalido
-                                                        
+                                                      //  return registro;
+
                                                     }
                                                     
                                                 }
@@ -586,9 +662,10 @@ namespace Proyecto
                                             }
                                             else
                                             {
-                                                Monitor.Exit(cachePropia.cache);
+                                                //Monitor.Exit(cachePropia.cache);
                                                 Monitor.Exit(directorioP0);
-                                                registro[1] = 0;//valor invalido   
+                                                registro[1] = 0;//valor invalido  
+                                                //return registro;
                                             }
                                         }
 
@@ -596,12 +673,37 @@ namespace Proyecto
                                     else//bloque compartido o uncached
                                     {
                                         int indiceMem = direccion;
-                                        
-                                        for (int i = 0; i < 4; ++i)//sube el bloque a la cache propia
+
+                                        if(Monitor.TryEnter(memDatosP0))
                                         {
-                                            cachePropia.cache[posCache, i] = memDatosP0[indiceMem];
-                                            indiceMem++; 
+                                            try
+                                            {
+                                                if (numNuc == 0 || numNuc == 1)
+                                                {
+                                                    for (int i = 0; i < 16; ++i)
+                                                    {
+                                                        sync.SignalAndWait();
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                    for (int i = 0; i < 40; ++i)
+                                                    {
+                                                        sync.SignalAndWait();
+                                                    }
+                                                }
+                                                for (int i = 0; i < 4; ++i)//sube el bloque a la cache propia
+                                                {
+                                                    cachePropia.cache[posCache, i] = memDatosP0[indiceMem];
+                                                    indiceMem++;
+                                                }
+                                            }
+                                            finally
+                                            {
+                                                Monitor.Exit(memDatosP0);
+                                            }
                                         }
+                                        
                                         cachePropia.cache[posCache, 4] = numBloque;
                                         cachePropia.cache[posCache, 5] = 1;//compartido
                                         registro[0] = cachePropia.cache[posCache, numPalabra];
@@ -617,10 +719,10 @@ namespace Proyecto
                             }
                             else
                             {
-                                Monitor.Exit(cachePropia.cache);
-                                Monitor.Exit(directorioP0);
+                               // Monitor.Exit(cachePropia.cache);
                                 registro[1] = 0;//valor invalido
-                                
+                               // return registro;
+
                             }
                         }
                         else
@@ -629,6 +731,18 @@ namespace Proyecto
                             {
                                 try
                                 {
+                                    if (numNuc == 0 || numNuc == 1)
+                                    {
+                                        for (int i = 0; i < 5; ++i)
+                                        {
+                                            sync.SignalAndWait();
+                                        }
+                                        
+                                    }
+                                    else
+                                    {
+                                        sync.SignalAndWait();
+                                    }
                                     if (directorioP1[numBloque, 1] == 2)//esta modificado en otra cache
                                     {
                                         int cacheModificado = -1;
@@ -656,6 +770,21 @@ namespace Proyecto
                                                         indiceMem++;
                                                     }
 
+                                                    if (numNuc == 0 || numNuc == 1)
+                                                    {
+                                                        for (int i = 0; i < 40; ++i)
+                                                        {
+                                                            sync.SignalAndWait();
+                                                        }
+
+                                                    }
+                                                    else
+                                                    {
+                                                        for (int i = 0; i < 16; ++i)
+                                                        {
+                                                            sync.SignalAndWait();
+                                                        }
+                                                    }
                                                 }
                                                 finally
                                                 {
@@ -670,9 +799,10 @@ namespace Proyecto
                                             }
                                             else
                                             {
-                                                Monitor.Exit(cachePropia.cache);
+                                                //Monitor.Exit(cachePropia.cache);
                                                 Monitor.Exit(directorioP1);
-                                                registro[1] = 0;//valor invalido  
+                                                registro[1] = 0;//valor invalido 
+                                                //return registro;
                                             }
                                             
                                             
@@ -691,6 +821,21 @@ namespace Proyecto
                                                         cachePropia.cache[posCache, i] = cache2.cache[posCache, i];
                                                         indiceMem++;
                                                     }
+                                                    if (numNuc == 0 || numNuc == 1)
+                                                    {
+                                                        for (int i = 0; i < 40; ++i)
+                                                        {
+                                                            sync.SignalAndWait();
+                                                        }
+
+                                                    }
+                                                    else
+                                                    {
+                                                        for (int i = 0; i < 16; ++i)
+                                                        {
+                                                            sync.SignalAndWait();
+                                                        }
+                                                    }
                                                 }
                                                 finally
                                                 {
@@ -705,10 +850,11 @@ namespace Proyecto
                                             }
                                             else
                                             {
-                                                Monitor.Exit(cachePropia.cache);
+                                                //Monitor.Exit(cachePropia.cache);
                                                 Monitor.Exit(cache2.cache);
                                                 Monitor.Exit(directorioP1);
-                                                registro[1] = 0;//valor invalido   
+                                                registro[1] = 0;//valor invalido
+                                                //return registro;   
                                             }
                                         }
 
@@ -716,11 +862,37 @@ namespace Proyecto
                                     else//bloque compartido o uncached
                                     {
                                         int indiceMem = direccion - 256;
-                                        for (int i = 0; i < 4; ++i)//sube el bloque a la cache propia
+                                        if(Monitor.TryEnter(memDatosP1))
                                         {
-                                            cachePropia.cache[posCache, i] = memDatosP1[indiceMem];
-                                            ++indiceMem;
+                                            try
+                                            {
+                                                for (int i = 0; i < 4; ++i)//sube el bloque a la cache propia
+                                                {
+                                                    cachePropia.cache[posCache, i] = memDatosP1[indiceMem];
+                                                    ++indiceMem;
+                                                }
+                                                if (numNuc == 0 || numNuc == 1)
+                                                {
+                                                    for (int i = 0; i < 40; ++i)
+                                                    {
+                                                        sync.SignalAndWait();
+                                                    }
+
+                                                }
+                                                else
+                                                {
+                                                    for (int i = 0; i < 16; ++i)
+                                                    {
+                                                        sync.SignalAndWait();
+                                                    }
+                                                }
+                                            }
+                                            finally
+                                            {
+                                                Monitor.Exit(memDatosP1);
+                                            }
                                         }
+                                        
                                         cachePropia.cache[posCache, 4] = numBloque;
                                         cachePropia.cache[posCache, 5] = 1;//compartido
                                         registro[0] = cachePropia.cache[posCache, numPalabra];
@@ -735,25 +907,25 @@ namespace Proyecto
                             }
                             else
                             {
-                                Monitor.Exit(cachePropia.cache);
+                              //  Monitor.Exit(cachePropia.cache);
                                 registro[1] = 0;//valor invalido
-                                
+                                //return registro;
                             }
                         }                        
                     }
                 } //try
-                     finally
-                     {
-                         Monitor.Exit(cachePropia.cache);
-                     }
-                 }//tryEnter(cachePropia)
-                 else
-                 {
-                     registro[1] = 0;//valor invalido
-                     return registro;
-                 }
-            return registro;
-        }//ejecutar LW
+                finally
+                {
+                    Monitor.Exit(cachePropia.cache);
+                }
+           }//tryEnter(cachePropia)
+            else
+            {
+                registro[1] = 0;//valor invalido
+                return registro;
+            }
+    return registro;
+   }//ejecutar LW
     }//clase procesador
     
 }//namespace Proyecto
