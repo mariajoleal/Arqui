@@ -28,8 +28,8 @@ namespace Proyecto
 
         public int[] cargarTxt(int numProc)
         {
-            string path0 = "C:\\Users\\b37275\\Desktop\\Arqui\\hilillos0";
-            string path1 = "C:\\Users\\b37275\\Desktop\\Arqui\\hilillos1";
+            string path0 = "C:\\Users\\b37709\\Desktop\\Arqui\\hilillos0";
+            string path1 = "C:\\Users\\b37709\\Desktop\\Arqui\\hilillos1";
 
             int indiceMem = 0;  // Para movernos por el array de la memoria principal
             int indiceMem1 = 0;

@@ -926,6 +926,918 @@ namespace Proyecto
             }
     return registro;
    }//ejecutar LW
-    }//clase procesador
+
+        public bool ejecutarSW(int valor, ref cacheDatos cachePropia, ref cacheDatos cache1, ref cacheDatos cache2, ref int[,] directorioP0, ref int[,] directorioP1, int direccion, ref int[] memDatosP0, ref int[] memDatosP1, int numNuc)
+        {
+            int numBloque = direccion / 16;
+            int numPalabra = (direccion % 16) / 4;
+            int posCache = numBloque % 4;
+            bool guardado = false;
+            //int[] registro = new int[2];
+            //registro[1] = 0;
+
+            Monitor.Enter(cachePropia.cache);
+            try
+            {
+                //HIT
+                if (cachePropia.cache[posCache, 4] == numBloque && cachePropia.cache[posCache, 5] != 0)//0 = invalido, 1 = compartido, 2 = modificado
+                {
+                    if (cachePropia.cache[posCache, 5] == 2) // Si está modificado 
+                    {
+                        cachePropia.cache[posCache, numPalabra] = valor;
+                    }
+                    else if (cachePropia.cache[posCache, 5] == 1) // Si está compartido 
+                    {
+                        if (numBloque < 16)
+                        {
+                            if (Monitor.TryEnter(directorioP0))
+                            {
+                                try
+                                {
+                                    List<int> cacheCompartido = new List<int>();
+                                    for (int i = 2; i < 5; ++i)//busca en que cache esta compartido
+                                    {
+                                        if (directorioP0[numBloque, i] == 1)
+                                        {
+                                            if (cachePropia.idCache != i)
+                                            {
+                                                cacheCompartido.Add(i);
+                                            }
+
+                                        }
+
+                                    }
+                                    for (int i = 0; i < cacheCompartido.Count; ++i)//invalida el bloque en las caches en las que esté compartido
+                                    {
+                                        if (cacheCompartido[i] == cache1.idCache)
+                                        {
+                                            if (Monitor.TryEnter(cache1.cache))
+                                            {
+                                                try
+                                                {
+                                                    if (numNuc == 0 || numNuc == 1)
+                                                    {
+                                                        for (int j = 0; j < 1; ++i)//ciclos de retraso para acceso de directorio local
+                                                        {
+                                                            sync.SignalAndWait();
+                                                        }
+
+                                                    }
+                                                    else
+                                                    {
+                                                        for (int j = 0; j < 5; ++i)//ciclos de retraso para acceso de directorio remoto
+                                                        {
+                                                            sync.SignalAndWait();
+                                                        }
+                                                    }
+                                                    cache1.cache[posCache, 5] = 0; // Se invalida el bloque en caché
+                                                    directorioP0[numBloque, cache1.idCache + 2] = 0; // Se actualiza el directorio
+
+                                                }
+                                                finally
+                                                {
+                                                    Monitor.Exit(cache1.cache);
+
+                                                }
+
+                                            }
+                                            else
+                                            {
+                                                Monitor.Exit(directorioP0);
+                                            }
+
+
+                                        }
+                                        else
+                                        {
+                                            if (Monitor.TryEnter(cache2.cache))
+                                            {
+                                                try
+                                                {
+                                                    cache2.cache[posCache, 5] = 0; // Se invalida
+                                                    directorioP0[numBloque, cache2.idCache + 2] = 0; // Se actualiza el directorio
+                                                }
+                                                finally
+                                                {
+                                                    Monitor.Exit(cache2.cache);
+                                                }
+                                            }
+                                            else
+                                            {
+                                                Monitor.Exit(directorioP0);
+                                            }
+                                        }
+
+                                    }
+
+                                    //se pasa el bloque a la caché propia
+                                    cachePropia.cache[posCache, numPalabra] = valor;
+                                    cachePropia.cache[posCache, 5] = 2;
+                                    directorioP0[numBloque, 1] = 2;
+                                    directorioP0[numBloque, cachePropia.idCache + 2] = 1;
+                                    guardado = true;
+                                }
+                                finally
+                                {
+                                    Monitor.Exit(directorioP0);
+                                }
+                            }
+                            else
+                            {
+                                guardado = false; //si no logra bloquear el directorio
+                            }
+
+                        } //fin compartido hit
+                        else
+                        {
+                            if (Monitor.TryEnter(directorioP1))
+                            {
+                                try
+                                {
+                                    if (numNuc == 0 || numNuc == 1)
+                                    {
+                                        for (int j = 0; j < 5; ++j)//ciclos de retraso para acceso de directorio local
+                                        {
+                                            sync.SignalAndWait();
+                                        }
+
+                                    }
+                                    else
+                                    {
+                                        for (int j = 0; j < 1; ++j)//ciclos de retraso para acceso de directorio remoto
+                                        {
+                                            sync.SignalAndWait();
+                                        }
+                                    }
+                                    List<int> cacheCompartido = new List<int>();
+                                    for (int i = 2; i < 5; ++i)//busca en que cache esta compartido
+                                    {
+                                        if (directorioP1[numBloque, i] == 1)
+                                        {
+                                            if (cachePropia.idCache != i)
+                                            {
+                                                cacheCompartido.Add(i);
+                                            }
+
+                                        }
+
+                                    }
+                                    for (int i = 0; i < cacheCompartido.Count; ++i)//invalida el bloque en las caches en las que esté compartido
+                                    {
+                                        if (cacheCompartido[i] == cache1.idCache)
+                                        {
+                                            if (Monitor.TryEnter(cache1.cache))
+                                            {
+                                                try
+                                                {
+                                                    
+                                                    cache1.cache[posCache, 5] = 0; // Se invalida el bloque en caché
+                                                    directorioP1[numBloque, cache1.idCache + 2] = 0; // Se actualiza el directorio
+
+                                                }
+                                                finally
+                                                {
+                                                    Monitor.Exit(cache1.cache);
+
+                                                }
+
+                                            }
+                                            else
+                                            {
+                                                guardado = false;
+                                                Monitor.Exit(directorioP1);
+                                            }
+
+
+                                        }
+                                        else
+                                        {
+                                            if (Monitor.TryEnter(cache2.cache))
+                                            {
+                                                try
+                                                {
+                                                    cache2.cache[posCache, 5] = 0; // Se invalida
+                                                    directorioP1[numBloque, cache2.idCache + 2] = 0; // Se actualiza el directorio
+                                                }
+                                                finally
+                                                {
+                                                    Monitor.Exit(cache2.cache);
+                                                }
+                                            }
+                                            else
+                                            {
+                                                guardado = false;
+                                                Monitor.Exit(directorioP1);
+                                            }
+                                        }
+
+                                    }
+
+                                    //se pasa el bloque a la caché propia
+                                    cachePropia.cache[posCache, numPalabra] = valor;
+                                    cachePropia.cache[posCache, 5] = 2;
+                                    directorioP1[numBloque, 1] = 2;
+                                    directorioP1[numBloque, cachePropia.idCache + 2] = 1;
+                                    guardado = true;
+                                }
+                                finally
+                                {
+                                    Monitor.Exit(directorioP0);
+                                }
+                            }
+                            else
+                            {
+                                guardado = false; //si no logra bloquear el directorio
+                            }
+                        }
+                    }
+                }
+                else // MISS
+                {
+                    if (cachePropia.cache[posCache, 5] == 2)//bloque victima modificado
+                    {
+                        int bloqueVictima = cachePropia.cache[posCache, 4];//numero de bloque victima
+                        if (bloqueVictima < 16)
+                        {
+                            if (Monitor.TryEnter(memDatosP0))
+                            {
+                                try
+                                {
+                                    int indiceMem = bloqueVictima * 16;
+                                    for (int i = 0; i < 4; ++i)//baja bloque victima a memoria
+                                    {
+                                        memDatosP0[indiceMem] = cache1.cache[posCache, i];
+                                        indiceMem++;
+                                    }
+
+                                    if (numNuc == 0 || numNuc == 1)
+                                    {
+                                        for (int i = 0; i < 16; ++i)//ciclos de retraso bajar bloque a mem local
+                                        {
+                                            sync.SignalAndWait();
+                                        }
+                                    }
+                                    else
+                                    {
+                                        for (int i = 0; i < 40; ++i)//ciclos de retraso bajar bloque a mem remota
+                                        {
+                                            sync.SignalAndWait();
+                                        }
+                                    }
+                                }
+                                finally
+                                {
+                                    Monitor.Exit(memDatosP0);
+                                }
+
+                                if (numBloque < 16)
+                                {
+                                    if (Monitor.TryEnter(directorioP0))
+                                    {
+                                        try
+                                        {
+                                            if (numNuc == 0 || numNuc == 1)//ciclos de retraso por usar directorio
+                                            {
+                                                for (int i = 0; i < 1; ++i)//ciclos de retraso directorio local
+                                                {
+                                                    sync.SignalAndWait();
+                                                }
+                                            }
+                                            else
+                                            {
+                                                for (int i = 0; i < 5; ++i)//ciclos de retraso directorio remoto
+                                                {
+                                                    sync.SignalAndWait();
+                                                }
+                                            }
+                                            List<int> cacheCompartido = new List<int>();
+                                            for (int i = 2; i < 5; ++i)//busca en que cache esta compartido
+                                            {
+                                                if (directorioP0[numBloque, i] == 1)
+                                                {
+                                                    if (cachePropia.idCache != i)
+                                                    {
+                                                        cacheCompartido.Add(i);
+                                                    }
+
+                                                }
+
+                                            }
+                                            for (int i = 0; i < cacheCompartido.Count; ++i)
+                                            {
+                                                if (cacheCompartido[i] == cache1.idCache)
+                                                {
+                                                    if (Monitor.TryEnter(cache1.cache))
+                                                    {
+                                                        try
+                                                        {
+                                                            cache1.cache[posCache, 5] = 0; // Se invalida en otras caches
+                                                            directorioP0[numBloque, cache1.idCache + 2] = 0; // Se actualiza el directorio
+
+                                                        }
+                                                        finally
+                                                        {
+                                                            Monitor.Exit(cache1.cache);
+
+                                                        }
+
+                                                    }
+                                                    else
+                                                    {
+                                                        Monitor.Exit(directorioP0);
+                                                    }
+
+
+                                                }
+                                                else
+                                                {
+                                                    if (Monitor.TryEnter(cache2.cache))
+                                                    {
+                                                        try
+                                                        {
+                                                            cache2.cache[posCache, 5] = 0; // Se invalida en otra cache
+                                                            directorioP0[numBloque, cache2.idCache + 2] = 0; // Se actualiza el directorio
+                                                        }
+                                                        finally
+                                                        {
+                                                            Monitor.Exit(cache2.cache);
+                                                        }
+                                                    }
+                                                    else
+                                                    {
+                                                        Monitor.Exit(directorioP0);
+                                                    }
+                                                }
+
+                                            }
+
+                                            /*copia el bloque de la otra cache y luego escribe el dato, modifica estado 
+                                            en directorio*/
+                                            cachePropia.cache[posCache, numPalabra] = valor;
+                                            cachePropia.cache[posCache, 5] = 2;
+                                            directorioP0[numBloque, 1] = 2;
+                                            directorioP0[numBloque, cachePropia.idCache + 2] = 1;
+                                            guardado = true;
+                                        }
+                                        finally
+                                        {
+                                            Monitor.Exit(directorioP0);
+                                        }
+                                    }
+                                    else
+                                    {
+                                        guardado = false;
+                                    }
+
+                                }
+                            }
+                            else
+                            {
+                                //Monitor.Exit(cachePropia.cache);
+                                guardado = false;
+
+                            }
+                        }
+                        else
+                        {
+                            if (Monitor.TryEnter(memDatosP1))
+                            {
+                                try
+                                {
+                                    int indiceMem = bloqueVictima * 16 - 256;
+                                    for (int i = 0; i < 4; ++i)//sube el bloque a la cache propia
+                                    {
+                                        memDatosP1[indiceMem] = cache1.cache[posCache, i];
+                                        indiceMem++;
+                                    }
+
+                                    if (numNuc == 0 || numNuc == 1)
+                                    {
+                                        for (int i = 0; i < 40; ++i)
+                                        {
+                                            sync.SignalAndWait();
+                                        }
+                                    }
+                                    else
+                                    {
+                                        for (int i = 0; i < 16; ++i)
+                                        {
+                                            sync.SignalAndWait();
+                                        }
+                                    }
+                                }
+                                finally
+                                {
+                                    Monitor.Exit(memDatosP1);
+                                }
+                            }
+                            else
+                            {
+                                //Monitor.Exit(cachePropia.cache);
+                                guardado = false;
+                            }
+                        }
+
+                    }//fin bloque vitima modificado
+
+                    else
+                    {
+                        if (numBloque < 16)
+                        {
+                            if (Monitor.TryEnter(directorioP0))
+                            {
+                                try
+                                {
+                                    //ciclos de retraso por acceso al directorio
+                                    if (numNuc == 0 || numNuc == 1)
+                                    {
+                                        for (int i = 0; i < 1; ++i)
+                                        {
+                                            sync.SignalAndWait();
+                                        }
+                                    }
+                                    else
+                                    {
+                                        for (int i = 0; i < 5; ++i)
+                                        {
+                                            sync.SignalAndWait();
+                                        }
+                                    }
+                                    if (directorioP0[numBloque, 1] == 2)//está modificado en alguna cache?
+                                    {
+                                        int cacheModificado = 0;
+                                        for (int i = 2; i < 5; ++i)
+                                        {
+                                            if (directorioP0[numBloque, i] == 1)
+                                            {
+                                                cacheModificado = i;
+                                            }
+                                        }
+                                        if (cache1.idCache == cacheModificado - 2)//si la cache 1 tiene el bloque modificado
+                                        {
+                                            if (Monitor.TryEnter(cache1.cache))
+                                            {
+                                                try
+                                                {
+                                                    if (Monitor.TryEnter(memDatosP0))
+                                                    {
+                                                        try
+                                                        {
+                                                            int indiceMem = numBloque * 16;
+                                                            for (int i = 0; i < 4; ++i)//baja bloque a memoria
+                                                            {
+                                                                memDatosP0[indiceMem] = cache1.cache[posCache, i];
+                                                                cachePropia.cache[posCache, i] = cache1.cache[posCache, i];
+                                                                indiceMem++;
+                                                            }
+                                                            //ciclos de retraso acceso a memoria
+                                                            if (numNuc == 0 || numNuc == 1)
+                                                            {
+                                                                for (int i = 0; i < 16; ++i)
+                                                                {
+                                                                    sync.SignalAndWait();
+                                                                }
+                                                            }
+                                                            else
+                                                            {
+                                                                for (int i = 0; i < 40; ++i)
+                                                                {
+                                                                    sync.SignalAndWait();
+                                                                }
+                                                            }
+                                                        }
+                                                        finally
+                                                        {
+                                                            Monitor.Exit(memDatosP0);
+                                                        }
+                                                        cachePropia.cache[posCache, 4] = cache2.cache[posCache, 4];
+                                                        cachePropia.cache[posCache, 5] = cache2.cache[posCache, 5];
+
+                                                    }
+                                                    else
+                                                    {
+                                                        //Monitor.Exit(cachePropia.cache);
+                                                        guardado = false;
+
+                                                    }
+                                                }
+                                                finally
+                                                {
+                                                    Monitor.Exit(cache1.idCache);
+                                                }
+                                            }
+                                            else
+                                            {
+                                                Monitor.Exit(directorioP0);
+                                                guardado = false;
+                                            }
+                                        }
+                                        else
+                                        {
+                                            if (Monitor.TryEnter(cache2.cache))
+                                            {
+                                                try
+                                                {
+                                                    if (Monitor.TryEnter(memDatosP0))
+                                                    {
+                                                        try
+                                                        {
+                                                            int indiceMem = numBloque * 16;
+                                                            for (int i = 0; i < 4; ++i)//baja bloque a memoria
+                                                            {
+                                                                memDatosP0[indiceMem] = cache2.cache[posCache, i];
+                                                                cachePropia.cache[posCache, i] = cache2.cache[posCache, i];
+                                                                indiceMem++;
+                                                            }
+                                                            //ciclos de retraso acceso a memoria
+                                                            if (numNuc == 0 || numNuc == 1)
+                                                            {
+                                                                for (int i = 0; i < 16; ++i)
+                                                                {
+                                                                    sync.SignalAndWait();
+                                                                }
+                                                            }
+                                                            else
+                                                            {
+                                                                for (int i = 0; i < 40; ++i)
+                                                                {
+                                                                    sync.SignalAndWait();
+                                                                }
+                                                            }
+                                                        }
+                                                        finally
+                                                        {
+                                                            Monitor.Exit(memDatosP0);
+                                                        }
+                                                        cachePropia.cache[posCache, 4] = cache2.cache[posCache, 4];
+                                                        cachePropia.cache[posCache, 5] = cache2.cache[posCache, 5];
+
+                                                    }
+                                                    else
+                                                    {
+                                                        Monitor.Exit(cache2.cache);
+                                                        Monitor.Exit(directorioP0);
+                                                        guardado = false;
+
+                                                    }
+                                                }
+                                                finally
+                                                {
+                                                    Monitor.Exit(cache2.idCache);
+                                                }
+                                            }
+                                            else
+                                            {
+                                                Monitor.Exit(directorioP0);
+                                                guardado = false;
+                                            }
+                                        }
+                                    }//bloque modificado en otra cache
+                                    else //no está modificado en ninguna cache
+                                    {
+                                        if (numBloque < 16)
+                                        {
+                                            if (Monitor.TryEnter(memDatosP0))
+                                            {
+                                                try
+                                                {
+                                                    int indiceMem = numBloque * 16;
+                                                    for (int i = 0; i < 4; ++i)//sube bloque de memoria
+                                                    {
+                                                        cachePropia.cache[posCache, i] = memDatosP0[indiceMem];
+                                                        indiceMem++;
+                                                    }
+
+                                                    if (numNuc == 0 || numNuc == 1)
+                                                    {
+                                                        for (int i = 0; i < 16; ++i)//ciclos de retraso bajar bloque a mem local
+                                                        {
+                                                            sync.SignalAndWait();
+                                                        }
+                                                    }
+                                                    else
+                                                    {
+                                                        for (int i = 0; i < 40; ++i)//ciclos de retraso bajar bloque a mem remota
+                                                        {
+                                                            sync.SignalAndWait();
+                                                        }
+                                                    }
+                                                }
+                                                finally
+                                                {
+                                                    Monitor.Exit(memDatosP0);
+                                                }
+                                            }
+                                            else
+                                            {
+                                                Monitor.Exit(directorioP0);
+                                                guardado = false;
+                                            }
+                                        }
+                                        else
+                                        {
+                                            if (Monitor.TryEnter(memDatosP1))
+                                            {
+                                                try
+                                                {
+                                                    int indiceMem = numBloque * 16;
+                                                    for (int i = 0; i < 4; ++i)//sube bloque de memoria
+                                                    {
+                                                        cachePropia.cache[posCache, i] = memDatosP1[indiceMem] ;
+                                                        indiceMem++;
+                                                    }
+
+                                                    if (numNuc == 0 || numNuc == 1)
+                                                    {
+                                                        for (int i = 0; i < 40; ++i)//ciclos de retraso bajar bloque a mem local
+                                                        {
+                                                            sync.SignalAndWait();
+                                                        }
+                                                    }
+                                                    else
+                                                    {
+                                                        for (int i = 0; i < 16; ++i)//ciclos de retraso bajar bloque a mem remota
+                                                        {
+                                                            sync.SignalAndWait();
+                                                        }
+                                                    }
+                                                }
+                                                finally
+                                                {
+                                                    Monitor.Exit(memDatosP1);
+                                                }
+                                            }
+                                            else
+                                            {
+                                                Monitor.Exit(directorioP1);
+                                                guardado = false;
+                                            }
+                                        }
+                                    }
+                                }
+                                finally
+                                {
+                                    Monitor.Exit(directorioP0);
+                                }
+                            }
+                            else
+                            {
+                                guardado = false;
+                            }
+                        }
+                        else //está en memoria P1
+                        {
+                            if (Monitor.TryEnter(directorioP1))
+                            {
+                                try
+                                {
+                                    //ciclos de retraso por acceso al directorio
+                                    if (numNuc == 0 || numNuc == 1)
+                                    {
+                                        for (int i = 0; i < 1; ++i)
+                                        {
+                                            sync.SignalAndWait();
+                                        }
+                                    }
+                                    else
+                                    {
+                                        for (int i = 0; i < 5; ++i)
+                                        {
+                                            sync.SignalAndWait();
+                                        }
+                                    }
+                                    if (directorioP1[numBloque, 1] == 2)//está modificado en alguna cache?
+                                    {
+                                        int cacheModificado = 0;
+                                        for (int i = 2; i < 5; ++i)
+                                        {
+                                            if (directorioP1[numBloque, i] == 1)
+                                            {
+                                                cacheModificado = i;
+                                            }
+                                        }
+                                        if (cache1.idCache == cacheModificado - 2)//si la cache 1 tiene el bloque modificado
+                                        {
+                                            if (Monitor.TryEnter(cache1.cache))
+                                            {
+                                                try
+                                                {
+                                                    if (Monitor.TryEnter(memDatosP0))
+                                                    {
+                                                        try
+                                                        {
+                                                            int indiceMem = numBloque * 16;
+                                                            for (int i = 0; i < 4; ++i)//baja bloque a memoria
+                                                            {
+                                                                memDatosP0[indiceMem] = cache1.cache[posCache, i];
+                                                                cachePropia.cache[posCache, i] = cache1.cache[posCache, i];
+                                                                indiceMem++;
+                                                            }
+                                                            //ciclos de retraso acceso a memoria
+                                                            if (numNuc == 0 || numNuc == 1)
+                                                            {
+                                                                for (int i = 0; i < 16; ++i)
+                                                                {
+                                                                    sync.SignalAndWait();
+                                                                }
+                                                            }
+                                                            else
+                                                            {
+                                                                for (int i = 0; i < 40; ++i)
+                                                                {
+                                                                    sync.SignalAndWait();
+                                                                }
+                                                            }
+                                                        }
+                                                        finally
+                                                        {
+                                                            Monitor.Exit(memDatosP0);
+                                                        }
+                                                        cachePropia.cache[posCache, 4] = cache2.cache[posCache, 4];
+                                                        cachePropia.cache[posCache, 5] = cache2.cache[posCache, 5];
+
+                                                    }
+                                                    else
+                                                    {
+                                                        //Monitor.Exit(cachePropia.cache);
+                                                        guardado = false;
+
+                                                    }
+                                                }
+                                                finally
+                                                {
+                                                    Monitor.Exit(cache1.idCache);
+                                                }
+                                            }
+                                            else
+                                            {
+                                                Monitor.Exit(directorioP1);
+                                                guardado = false;
+                                            }
+                                        }
+                                        else
+                                        {
+                                            if (Monitor.TryEnter(cache2.cache))
+                                            {
+                                                try
+                                                {
+                                                    if (Monitor.TryEnter(memDatosP0))
+                                                    {
+                                                        try
+                                                        {
+                                                            int indiceMem = numBloque * 16;
+                                                            for (int i = 0; i < 4; ++i)//baja bloque a memoria
+                                                            {
+                                                                memDatosP0[indiceMem] = cache2.cache[posCache, i];
+                                                                cachePropia.cache[posCache, i] = cache2.cache[posCache, i];
+                                                                indiceMem++;
+                                                            }
+                                                            //ciclos de retraso acceso a memoria
+                                                            if (numNuc == 0 || numNuc == 1)
+                                                            {
+                                                                for (int i = 0; i < 16; ++i)
+                                                                {
+                                                                    sync.SignalAndWait();
+                                                                }
+                                                            }
+                                                            else
+                                                            {
+                                                                for (int i = 0; i < 40; ++i)
+                                                                {
+                                                                    sync.SignalAndWait();
+                                                                }
+                                                            }
+                                                        }
+                                                        finally
+                                                        {
+                                                            Monitor.Exit(memDatosP0);
+                                                        }
+                                                        cachePropia.cache[posCache, 4] = cache2.cache[posCache, 4];
+                                                        cachePropia.cache[posCache, 5] = cache2.cache[posCache, 5];
+
+                                                    }
+                                                    else
+                                                    {
+                                                        Monitor.Exit(cache2.cache);
+                                                        Monitor.Exit(directorioP1);
+                                                        guardado = false;
+
+                                                    }
+                                                }
+                                                finally
+                                                {
+                                                    Monitor.Exit(cache2.idCache);
+                                                }
+                                            }
+                                            else
+                                            {
+                                                Monitor.Exit(directorioP1);
+                                                guardado = false;
+                                            }
+                                        }
+                                    }//bloque modificado en otra cache
+                                    else //no está modificado en ninguna cache
+                                    {
+                                        if (numBloque < 16)
+                                        {
+                                            if (Monitor.TryEnter(memDatosP0))
+                                            {
+                                                try
+                                                {
+                                                    int indiceMem = numBloque * 16;
+                                                    for (int i = 0; i < 4; ++i)//sube bloque de memoria
+                                                    {
+                                                        cachePropia.cache[posCache, i] = memDatosP0[indiceMem];
+                                                        indiceMem++;
+                                                    }
+
+                                                    if (numNuc == 0 || numNuc == 1)
+                                                    {
+                                                        for (int i = 0; i < 16; ++i)//ciclos de retraso bajar bloque a mem local
+                                                        {
+                                                            sync.SignalAndWait();
+                                                        }
+                                                    }
+                                                    else
+                                                    {
+                                                        for (int i = 0; i < 40; ++i)//ciclos de retraso bajar bloque a mem remota
+                                                        {
+                                                            sync.SignalAndWait();
+                                                        }
+                                                    }
+                                                }
+                                                finally
+                                                {
+                                                    Monitor.Exit(memDatosP0);
+                                                }
+                                            }
+                                            else
+                                            {
+                                                Monitor.Exit(directorioP1);
+                                                guardado = false;
+                                            }
+                                        }
+                                        else
+                                        {
+                                            if (Monitor.TryEnter(memDatosP1))
+                                            {
+                                                try
+                                                {
+                                                    int indiceMem = numBloque * 16;
+                                                    for (int i = 0; i < 4; ++i)//sube bloque de memoria
+                                                    {
+                                                        cachePropia.cache[posCache, i] = memDatosP1[indiceMem];
+                                                        indiceMem++;
+                                                    }
+
+                                                    if (numNuc == 0 || numNuc == 1)
+                                                    {
+                                                        for (int i = 0; i < 40; ++i)//ciclos de retraso bajar bloque a mem local
+                                                        {
+                                                            sync.SignalAndWait();
+                                                        }
+                                                    }
+                                                    else
+                                                    {
+                                                        for (int i = 0; i < 16; ++i)//ciclos de retraso bajar bloque a mem remota
+                                                        {
+                                                            sync.SignalAndWait();
+                                                        }
+                                                    }
+                                                }
+                                                finally
+                                                {
+                                                    Monitor.Exit(memDatosP1);
+                                                }
+                                            }
+                                            else
+                                            {
+                                                Monitor.Exit(directorioP1);
+                                                guardado = false;
+                                            }
+                                        }
+                                    }
+                                }
+                                finally
+                                {
+                                    Monitor.Exit(directorioP1);
+                                }
+                            }
+                            else
+                            {
+                                guardado = false;
+                            }
+                        }
+                    }
+                }
+            }
+            finally
+            {
+                Monitor.Exit(cachePropia.cache);
+            }
+            return guardado;
+        }
+    }
+ }//clase procesador
     
-}//namespace Proyecto
+//namespace Proyecto
