@@ -12,7 +12,13 @@ namespace Proyecto
         public Procesador procesador1;
         public Barrier sync;
         public int quantum;
+<<<<<<< Updated upstream
         int numeroHilos;
+=======
+        public int numeroHilos;
+        public int reloj;
+        
+>>>>>>> Stashed changes
 
         public Controlador(int q) {
             quantum = q;
@@ -27,8 +33,13 @@ namespace Proyecto
 
         public int[] cargarTxt(int numProc)
         {
+<<<<<<< Updated upstream
             string path0 = "C:\\Users\\b37709\\Desktop\\Arqui\\Proyecto\\hilillos\\hilillos0";
             string path1 = "C:\\Users\\b37709\\Desktop\\Arqui\\Proyecto\\hilillos\\hilillos1";
+=======
+            string path0 = "C:\\Users\\Mariajo Leal\\Desktop\\hilillos0";
+            string path1 = "C:\\Users\\Mariajo Leal\\Desktop\\hilillos1";
+>>>>>>> Stashed changes
 
             int indiceMem = 0;  // Para movernos por el array de la memoria principal
             int indiceMem1 = 0;
@@ -121,6 +132,7 @@ namespace Proyecto
                     Console.Write(inicioHilillo[i] + "  ");
                 }*/
             }
+<<<<<<< Updated upstream
         
            
             
@@ -129,3 +141,111 @@ namespace Proyecto
         } 
    }
 }
+=======
+            return inicioHilillo;
+        } 
+
+        public void iniciarPrograma()
+        {
+            int[] temp1 = cargarTxt(0);
+            int[] temp2 = cargarTxt(1);
+            procesador0.crearColaContextos(temp1);
+            procesador1.crearColaContextos1(temp2);
+            crearHilos();
+           // imprimirResultado();
+           
+        }
+
+        public void crearHilos()
+        {
+            Thread nucleo0 = new Thread(delegate ()
+            {
+                procesador0.ejecutarInstruccion(ref procesador0.cacheInstN0, ref procesador0.cacheDatosN0, 0, ref procesador0.cacheDatosN1, ref procesador1.cacheDatosN0, ref procesador0.directorio, ref procesador1.directorio, ref procesador0.memPrinc, ref procesador1.memPrinc );
+            });
+
+            Thread nucleo1 = new Thread(delegate ()
+            {
+                procesador0.ejecutarInstruccion(ref procesador0.cacheInstN1, ref procesador0.cacheDatosN1, 1, ref procesador0.cacheDatosN0, ref procesador1.cacheDatosN0, ref procesador0.directorio, ref procesador1.directorio, ref procesador0.memPrinc, ref procesador1.memPrinc);
+            });
+
+            Thread nucleo2 = new Thread(delegate ()
+            {
+                procesador1.ejecutarInstruccion(ref procesador1.cacheInstN0, ref procesador1.cacheDatosN0, 2, ref procesador0.cacheDatosN0, ref procesador0.cacheDatosN1, ref procesador1.directorio, ref procesador0.directorio, ref procesador1.memPrinc, ref procesador0.memPrinc);
+            });
+
+            nucleo0.Start();
+            nucleo1.Start();
+            nucleo2.Start();
+
+            
+            controlarReloj(nucleo0, nucleo1, nucleo2);
+            //imprimirResultado();
+
+        }
+
+        public void imprimirResultado()
+        {
+            for (int i = 0; i < procesador0.hilillosTerminados.Count; ++i)
+            {
+                int[] registros = procesador0.hilillosTerminados[i];
+                for (int j = 0; j < 32 ; ++i)
+                {
+                    Console.Write("R" + i + ":" + registros[i] + "\n");
+                }
+
+                Console.Write("\n");
+            }
+
+            for (int i = 0; i < procesador1.hilillosTerminados.Count; ++i)
+            {
+                int[] registros = procesador1.hilillosTerminados[i];
+                for (int j = 0; j < 32; ++i)
+                {
+                    Console.Write("R" + i + ":" + registros[i] + "\n");
+                }
+            }
+
+        }
+
+        // Incrementa el reloj del sistema mientras los hilos (procesadores) esten corriendo
+        public void controlarReloj(Thread n0, Thread n1, Thread n2)
+        {
+            bool n0Vivo = true;
+            bool n1Vivo = true;
+            bool n2Vivo = true;
+
+            Console.WriteLine("\nAvance del reloj: " + reloj);
+
+            while (sync.ParticipantCount > 1)
+            {
+                if (!n0.IsAlive && n0Vivo)
+                {
+                    n0Vivo = false;
+                    sync.RemoveParticipant();
+                }
+                if (!n1.IsAlive && n1Vivo)
+                {
+                    n1Vivo = false;
+                    sync.RemoveParticipant();
+                }
+                if (!n2.IsAlive && n2Vivo)
+                {
+                    n2Vivo = false;
+                    sync.RemoveParticipant();
+                }
+
+                // Incrementa el reloj y lo asigna a los 3 procesadores
+                ++reloj;
+                ++this.procesador0.reloj;
+                ++this.procesador1.reloj;
+                sync.SignalAndWait();   // Envia una señal y espera a que los 3 procesadores ejecuten envien señal
+
+                //Console.WriteLine(reloj);
+            }
+        }
+
+
+
+    }//clase controlador
+}//namespace proyecto
+>>>>>>> Stashed changes
