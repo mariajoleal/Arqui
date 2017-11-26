@@ -53,10 +53,10 @@ namespace Proyecto
                 
                 //inicializacion de la memoria
                 memPrinc = new int[256];
-                for(int i = 0; i < 256; ++i)
+                /*for(int i = 0; i < 256; ++i)
                 {
                     memPrinc[i] = 1;
-                }
+                }*/
                 memInst = new int[384];
                 directorio = new int[16, 5];
                // contexto = new int[33];
@@ -93,10 +93,10 @@ namespace Proyecto
             
                 //inicializacion de la memoria
                 memPrinc = new int[128];
-                for (int i = 0; i < 128; ++i)
+               /* for (int i = 0; i < 128; ++i)
                 {
                     memPrinc[i] = 1;
-                }
+                }*/
                 memInst = new int[256];
                 directorio = new int[8, 5];
                 colaContexto = new Queue<int[]>();
@@ -278,6 +278,21 @@ namespace Proyecto
             
         }
 
+        public void imprimirCacheDatos(cacheDatos cache)
+        {
+            Console.WriteLine("cache de datos nucleo {0};", cache.idCache);
+            for(int i = 0; i < 4; ++i)
+            {
+                for(int j = 0; j < 6; ++j)
+                {
+                    Console.Write(cache.cache[i, j] + "  ");
+                }
+                Console.WriteLine();
+            }
+            
+
+        }
+
         public void imprimirRegistros(int[] registros)
         {
             Console.WriteLine("Registros hilillo " + registros[33]);
@@ -353,7 +368,13 @@ namespace Proyecto
                                     
                             break;
                         case 43:    // SW
-                                    // Ejecutar STORE
+                            int posMemoria = instruccion[3] + registros[instruccion[1]];
+                            int valor = registros[instruccion[2]];
+                            bool resultado = ejecutarSW(valor, ref cachePropia, ref cache1, ref cache2, ref directorioP0, ref directorioP1, posMemoria, ref memDatosP0, ref memDatosP1, numNuc);
+                            if(!resultado)
+                            {
+                                pc -= 4;
+                            }
                             break;
                         case 63:    // Termino el hilillo
                             imprimirRegistros(registros);
@@ -383,6 +404,7 @@ namespace Proyecto
                  
                 
             }
+            imprimirCacheDatos(cachePropia);
             /*
             for (int i = 0; i < hilillosTerminados.Count; ++i)
             {
@@ -743,12 +765,12 @@ namespace Proyecto
                                     {
                                         sync.SignalAndWait();
                                     }
-                                    if (directorioP1[numBloque, 1] == 2)//esta modificado en otra cache
+                                    if (directorioP1[numBloque - 16, 1] == 2)//esta modificado en otra cache
                                     {
                                         int cacheModificado = -1;
                                         for (int i = 2; i < 5; ++i)//busca en que cache esta modificado
                                         {
-                                            if (directorioP1[numBloque, i] == 1)
+                                            if (directorioP1[numBloque - 16, i] == 1)
                                             {
                                                 cacheModificado = i;
                                             }
@@ -794,8 +816,8 @@ namespace Proyecto
                                                 cachePropia.cache[posCache, 5] = cache1.cache[posCache, 5];
                                                 registro[0] = cachePropia.cache[posCache, numPalabra];
                                                 registro[1] = 1;
-                                                directorioP1[numBloque, cache1.idCache + 2] = 1;//pone el bloque compartido en la cache que lo tenia modificado
-                                                directorioP1[numBloque, cachePropia.idCache + 2] = 1;//pone el bloque compartido en la cache propia
+                                                directorioP1[numBloque - 16, cache1.idCache + 2] = 1;//pone el bloque compartido en la cache que lo tenia modificado
+                                                directorioP1[numBloque - 16, cachePropia.idCache + 2] = 1;//pone el bloque compartido en la cache propia
                                             }
                                             else
                                             {
@@ -845,8 +867,8 @@ namespace Proyecto
                                                 cachePropia.cache[posCache, 5] = cache2.cache[posCache, 5];
                                                 registro[0] = cachePropia.cache[posCache, numPalabra];
                                                 registro[1] = 1;
-                                                directorioP1[numBloque, cache2.idCache + 2] = 1;//pone el bloque compartido en la cache que lo tenia modificado
-                                                directorioP1[numBloque, cachePropia.idCache + 2] = 1;//pone el bloque compartido en la cache propia
+                                                directorioP1[numBloque - 16, cache2.idCache + 2] = 1;//pone el bloque compartido en la cache que lo tenia modificado
+                                                directorioP1[numBloque - 16, cachePropia.idCache + 2] = 1;//pone el bloque compartido en la cache propia
                                             }
                                             else
                                             {
@@ -897,7 +919,7 @@ namespace Proyecto
                                         cachePropia.cache[posCache, 5] = 1;//compartido
                                         registro[0] = cachePropia.cache[posCache, numPalabra];
                                         registro[1] = 1;
-                                        directorioP1[numBloque, cachePropia.idCache + 2] = 1;//pone el bloque compartido en la cache propia  
+                                        directorioP1[numBloque - 16, cachePropia.idCache + 2] = 1;//pone el bloque compartido en la cache propia  
                                     }
                                 }
                                 finally
@@ -945,6 +967,197 @@ namespace Proyecto
                     if (cachePropia.cache[posCache, 5] == 2) // Si está modificado 
                     {
                         cachePropia.cache[posCache, numPalabra] = valor;
+                        guardado = true;
+                        if(numBloque < 16)
+                        {
+                            if(Monitor.TryEnter(directorioP0))
+                            {
+                                try
+                                {
+                                    List<int> cacheCompartido = new List<int>();
+                                    for (int i = 2; i < 5; ++i)//busca en que cache esta compartido
+                                    {
+                                        if (directorioP0[numBloque, i] == 1)
+                                        {
+                                            if (cachePropia.idCache != i)
+                                            {
+                                                cacheCompartido.Add(i);
+                                            }
+
+                                        }
+
+                                    }
+                                    for (int i = 0; i < cacheCompartido.Count; ++i)//invalida el bloque en las caches en las que esté compartido
+                                    {
+                                        if (cacheCompartido[i] == cache1.idCache)
+                                        {
+                                            if (Monitor.TryEnter(cache1.cache))
+                                            {
+                                                try
+                                                {
+                                                    if (numNuc == 0 || numNuc == 1)
+                                                    {
+                                                        for (int j = 0; j < 1; ++i)//ciclos de retraso para acceso de directorio local
+                                                        {
+                                                            sync.SignalAndWait();
+                                                        }
+
+                                                    }
+                                                    else
+                                                    {
+                                                        for (int j = 0; j < 5; ++i)//ciclos de retraso para acceso de directorio remoto
+                                                        {
+                                                            sync.SignalAndWait();
+                                                        }
+                                                    }
+                                                    cache1.cache[posCache, 5] = 0; // Se invalida el bloque en caché
+                                                    directorioP0[numBloque, cache1.idCache + 2] = 0; // Se actualiza el directorio
+
+                                                }
+                                                finally
+                                                {
+                                                    Monitor.Exit(cache1.cache);
+
+                                                }
+
+                                            }
+                                            else
+                                            {
+                                                Monitor.Exit(directorioP0);
+                                            }
+
+
+                                        }
+                                        else
+                                        {
+                                            if (Monitor.TryEnter(cache2.cache))
+                                            {
+                                                try
+                                                {
+                                                    cache2.cache[posCache, 5] = 0; // Se invalida
+                                                    directorioP0[numBloque, cache2.idCache + 2] = 0; // Se actualiza el directorio
+                                                }
+                                                finally
+                                                {
+                                                    Monitor.Exit(cache2.cache);
+                                                }
+                                            }
+                                            else
+                                            {
+                                                Monitor.Exit(directorioP0);
+                                            }
+                                        }
+
+                                    }
+                                    directorioP0[numBloque, 1] = 2;//modificado
+                                    directorioP0[numBloque, cachePropia.idCache + 2] = 1;
+                                }
+                                finally
+                                {
+                                    Monitor.Exit(directorioP0);
+                                }
+                            }
+                            else
+                            {
+                                Monitor.Exit(cachePropia.cache);
+                                guardado = false;
+                            }
+                        }
+                        else
+                        {
+                            if (Monitor.TryEnter(directorioP1))
+                            {
+                                try
+                                {
+                                    List<int> cacheCompartido = new List<int>();
+                                    for (int i = 2; i < 5; ++i)//busca en que cache esta compartido
+                                    {
+                                        if (directorioP0[numBloque, i] == 1)
+                                        {
+                                            if (cachePropia.idCache != i)
+                                            {
+                                                cacheCompartido.Add(i);
+                                            }
+
+                                        }
+
+                                    }
+                                    for (int i = 0; i < cacheCompartido.Count; ++i)//invalida el bloque en las caches en las que esté compartido
+                                    {
+                                        if (cacheCompartido[i] == cache1.idCache)
+                                        {
+                                            if (Monitor.TryEnter(cache1.cache))
+                                            {
+                                                try
+                                                {
+                                                    if (numNuc == 0 || numNuc == 1)
+                                                    {
+                                                        for (int j = 0; j < 1; ++i)//ciclos de retraso para acceso de directorio local
+                                                        {
+                                                            sync.SignalAndWait();
+                                                        }
+
+                                                    }
+                                                    else
+                                                    {
+                                                        for (int j = 0; j < 5; ++i)//ciclos de retraso para acceso de directorio remoto
+                                                        {
+                                                            sync.SignalAndWait();
+                                                        }
+                                                    }
+                                                    cache1.cache[posCache, 5] = 0; // Se invalida el bloque en caché
+                                                    directorioP1[numBloque - 16, cache1.idCache + 2] = 0; // Se actualiza el directorio
+
+                                                }
+                                                finally
+                                                {
+                                                    Monitor.Exit(cache1.cache);
+
+                                                }
+
+                                            }
+                                            else
+                                            {
+                                                Monitor.Exit(directorioP1);
+                                            }
+
+
+                                        }
+                                        else
+                                        {
+                                            if (Monitor.TryEnter(cache2.cache))
+                                            {
+                                                try
+                                                {
+                                                    cache2.cache[posCache, 5] = 0; // Se invalida
+                                                    directorioP1[numBloque - 16, cache2.idCache + 2] = 0; // Se actualiza el directorio
+                                                }
+                                                finally
+                                                {
+                                                    Monitor.Exit(cache2.cache);
+                                                }
+                                            }
+                                            else
+                                            {
+                                                Monitor.Exit(directorioP0);
+                                            }
+                                        }
+
+                                    }
+                                    directorioP1[numBloque, 1] = 2;//modificado
+                                    directorioP1[numBloque, cachePropia.idCache + 2] = 1;
+                                }
+                                finally
+                                {
+                                    Monitor.Exit(directorioP1);
+                                }
+                            }
+                            else
+                            {
+                                Monitor.Exit(cachePropia.cache);
+                                guardado = false;
+                            }
+                        }
                     }
                     else if (cachePropia.cache[posCache, 5] == 1) // Si está compartido 
                     {
@@ -1030,7 +1243,7 @@ namespace Proyecto
 
                                     }
 
-                                    //se pasa el bloque a la caché propia
+                                    //se copia el valor en la palabra correspondiente
                                     cachePropia.cache[posCache, numPalabra] = valor;
                                     cachePropia.cache[posCache, 5] = 2;
                                     directorioP0[numBloque, 1] = 2;
@@ -1133,7 +1346,7 @@ namespace Proyecto
 
                                     }
 
-                                    //se pasa el bloque a la caché propia
+                                    //se copia el valor en la palabra
                                     cachePropia.cache[posCache, numPalabra] = valor;
                                     cachePropia.cache[posCache, 5] = 2;
                                     directorioP1[numBloque, 1] = 2;
@@ -1211,7 +1424,7 @@ namespace Proyecto
                                                 }
                                             }
                                             List<int> cacheCompartido = new List<int>();
-                                            for (int i = 2; i < 5; ++i)//busca en que cache esta compartido
+                                            for (int i = 2; i < 5; ++i)//busca en que cache esta el bloque
                                             {
                                                 if (directorioP0[numBloque, i] == 1)
                                                 {
@@ -1507,6 +1720,72 @@ namespace Proyecto
                                                         cachePropia.cache[posCache, i] = memDatosP0[indiceMem];
                                                         indiceMem++;
                                                     }
+                                                    cachePropia.cache[posCache, 4] = numBloque;
+                                                    cachePropia.cache[posCache, 5] = 1;
+                                                    cachePropia.cache[posCache, numPalabra] = valor;
+                                                    guardado = true;
+                                                    
+                                                    
+                                                    List<int> cacheCompartido = new List<int>();
+                                                    for (int i = 2; i < 5; ++i)//busca en que cache esta el bloque
+                                                    {
+                                                        if (directorioP0[numBloque, i] == 1)
+                                                        {
+                                                            if (cachePropia.idCache != i)
+                                                            {
+                                                                cacheCompartido.Add(i);
+                                                            }
+
+                                                        }
+
+                                                    }
+                                                    for (int i = 0; i < cacheCompartido.Count; ++i)
+                                                    {
+                                                        if (cacheCompartido[i] == cache1.idCache)
+                                                        {
+                                                            if (Monitor.TryEnter(cache1.cache))
+                                                            {
+                                                                try
+                                                                {
+                                                                    cache1.cache[posCache, 5] = 0; // Se invalida en otras caches
+                                                                    directorioP0[numBloque, cache1.idCache + 2] = 0; // Se actualiza el directorio
+
+                                                                }
+                                                                finally
+                                                                {
+                                                                    Monitor.Exit(cache1.cache);
+
+                                                                }
+
+                                                            }
+                                                            else
+                                                            {
+                                                                Monitor.Exit(directorioP0);
+                                                            }
+
+
+                                                        }
+                                                        else
+                                                        {
+                                                            if (Monitor.TryEnter(cache2.cache))
+                                                            {
+                                                                try
+                                                                {
+                                                                    cache2.cache[posCache, 5] = 0; // Se invalida en otra cache
+                                                                    directorioP0[numBloque, cache2.idCache + 2] = 0; // Se actualiza el directorio
+                                                                }
+                                                                finally
+                                                                {
+                                                                    Monitor.Exit(cache2.cache);
+                                                                }
+                                                            }
+                                                            else
+                                                            {
+                                                                Monitor.Exit(directorioP0);
+                                                            }
+                                                        }
+
+                                                    }
 
                                                     if (numNuc == 0 || numNuc == 1)
                                                     {
@@ -1527,6 +1806,7 @@ namespace Proyecto
                                                 {
                                                     Monitor.Exit(memDatosP0);
                                                 }
+
                                             }
                                             else
                                             {
@@ -1546,6 +1826,90 @@ namespace Proyecto
                                                         cachePropia.cache[posCache, i] = memDatosP1[indiceMem] ;
                                                         indiceMem++;
                                                     }
+
+                                                    cachePropia.cache[posCache, 4] = numBloque;
+                                                    cachePropia.cache[posCache, 5] = 1;
+                                                    cachePropia.cache[posCache, numPalabra] = valor;
+                                                    guardado = true;
+
+
+                                                    List<int> cacheCompartido = new List<int>();
+                                                    if(Monitor.TryEnter(directorioP1))
+                                                    {
+                                                        try
+                                                        {
+                                                            for (int i = 2; i < 5; ++i)//busca en que cache esta el bloque
+                                                            {
+                                                                if (directorioP0[numBloque, i] == 1)
+                                                                {
+                                                                    if (cachePropia.idCache != i)
+                                                                    {
+                                                                        cacheCompartido.Add(i);
+                                                                    }
+
+                                                                }
+
+                                                            }
+                                                            for (int i = 0; i < cacheCompartido.Count; ++i)
+                                                            {
+                                                                if (cacheCompartido[i] == cache1.idCache)
+                                                                {
+                                                                    if (Monitor.TryEnter(cache1.cache))
+                                                                    {
+                                                                        try
+                                                                        {
+                                                                            cache1.cache[posCache, 5] = 0; // Se invalida en otras caches
+                                                                            directorioP0[numBloque, cache1.idCache + 2] = 0; // Se actualiza el directorio
+
+                                                                        }
+                                                                        finally
+                                                                        {
+                                                                            Monitor.Exit(cache1.cache);
+
+                                                                        }
+
+                                                                    }
+                                                                    else
+                                                                    {
+                                                                        Monitor.Exit(directorioP0);
+                                                                    }
+
+
+                                                                }
+                                                                else
+                                                                {
+                                                                    if (Monitor.TryEnter(cache2.cache))
+                                                                    {
+                                                                        try
+                                                                        {
+                                                                            cache2.cache[posCache, 5] = 0; // Se invalida en otra cache
+                                                                            directorioP0[numBloque, cache2.idCache + 2] = 0; // Se actualiza el directorio
+                                                                        }
+                                                                        finally
+                                                                        {
+                                                                            Monitor.Exit(cache2.cache);
+                                                                        }
+                                                                    }
+                                                                    else
+                                                                    {
+                                                                        Monitor.Exit(directorioP0);
+                                                                    }
+                                                                }
+
+                                                            }
+                                                        }
+                                                        finally
+                                                        {
+                                                            Monitor.Exit(directorioP1);
+                                                        }
+                                                    }
+                                                    else
+                                                    {
+                                                        Monitor.Exit(directorioP0);
+                                                        Monitor.Exit(cachePropia.cache);
+                                                        guardado = false;
+                                                    }
+                                                    
 
                                                     if (numNuc == 0 || numNuc == 1)
                                                     {
