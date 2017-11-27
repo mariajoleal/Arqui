@@ -1059,7 +1059,7 @@ namespace Proyecto
                             }
                             else
                             {
-                                Monitor.Exit(cachePropia.cache);
+                                //Monitor.Exit(cachePropia.cache);
                                 guardado = false;
                             }
                         }
@@ -1154,7 +1154,7 @@ namespace Proyecto
                             }
                             else
                             {
-                                Monitor.Exit(cachePropia.cache);
+                                //Monitor.Exit(cachePropia.cache);
                                 guardado = false;
                             }
                         }
@@ -1721,7 +1721,7 @@ namespace Proyecto
                                                         indiceMem++;
                                                     }
                                                     cachePropia.cache[posCache, 4] = numBloque;
-                                                    cachePropia.cache[posCache, 5] = 1;
+                                                    cachePropia.cache[posCache, 5] = 2;
                                                     cachePropia.cache[posCache, numPalabra] = valor;
                                                     guardado = true;
                                                     
@@ -1906,7 +1906,7 @@ namespace Proyecto
                                                     else
                                                     {
                                                         Monitor.Exit(directorioP0);
-                                                        Monitor.Exit(cachePropia.cache);
+                                                       // Monitor.Exit(cachePropia.cache);
                                                         guardado = false;
                                                     }
                                                     
